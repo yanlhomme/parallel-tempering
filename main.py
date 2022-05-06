@@ -373,7 +373,7 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                 p_switch = np.random.uniform()
                 p_accept = p
                 if beta > 0:
-                    p_accept += beta * (0.25 * param_remove)
+                    p_accept += beta * 0.25
                 if p_switch < p_accept:
                     if len([j for j in added if A[i, j] != 1]) == 0:
                         x_candidate[i] = 1
@@ -414,7 +414,7 @@ def metropolisHastings(A, N, K, x_init, n_steps, log_K_over_N, log_1_minus_K_ove
                              suffix=f"Complete (size of clique estimate: {size_of_clique})", length=50)
         p = 0.5
         x_candidate, step_time_complexity = drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(
-            x, N, K, A, "switch_standard", p=p, k=param_k, param_remove=param_remove, beta=beta, A_neighbors=A_neighbors)
+            x, N, K, A, "switch_k", p=p, k=param_k, param_remove=param_remove, beta=beta, A_neighbors=A_neighbors)
         H_candidate = H(x_candidate, N,
                         log_K_over_N, log_1_minus_K_over_N, N_count_constant)
         time_complexity += step_time_complexity
@@ -711,7 +711,7 @@ def testParallelTempering(N, K, param_k, betas=[], n_steps=5, from_file=""):
 
     # run PT and compute elapsed time
     estimate, monitoring_metropolis, monitoring_tempering, time_result = parallelTempering(
-        A, N, K, betas, param_k, n_steps, A_neighbors=A_neighbors, with_threading=True, param_remove=0.25)
+        A, N, K, betas, param_k, n_steps, A_neighbors=A_neighbors, with_threading=True, param_remove=0.5)
 
     # result compared to actual clique
     estimate_indices = [i for i in range(N) if estimate[i] == 1]
@@ -930,7 +930,7 @@ def timeOfConvergenceChangingK(N_param=0, n_samples=1):
                     N, K, with_neighbors=True)
                 truth = [i for i in range(N) if v[i] == 1]
                 estimate, monitoring_metropolis, monitoring_tempering, time_res = parallelTempering(
-                    A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, param_remove=0.5, with_threading=True)
+                    A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, param_remove=0.5)
                 estimate_indices = [i for i in range(N) if estimate[i] == 1]
                 diff_not_in_truth = [
                     i for i in estimate_indices if i not in truth]
@@ -1044,7 +1044,7 @@ def createGraphTimeComplexity(filename):
 if __name__ == '__main__':
     # ===============================
     # To test the clique recovery with PT uncomment this section and change the values of K_tilde_test, N_test, K_test (and param_k_test) according to your needs
-    # K_tilde_test = 1.92
+    # K_tilde_test = 4
     # N_test = 2000
     # K_test = getKFromKTilde(N_test, K_tilde_test)
     # param_k_test = 2 * K_test
@@ -1053,7 +1053,7 @@ if __name__ == '__main__':
 
     # ===============================
     # To sample the convergence of PT with the values of the paper (changing K) uncomment this section
-    timeOfConvergenceChangingK(n_samples=10)
+    timeOfConvergenceChangingK(N_param=2000, n_samples=5)
     # ===============================
 
     # ===============================
