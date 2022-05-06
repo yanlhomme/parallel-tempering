@@ -324,7 +324,7 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                 1, floor(min(len(clique_indices1), k) * param_remove))
             k_add = k - k_remove
             if len(clique_indices1) == 0:
-                k_add = floor(K * 0.5)
+                k_add = floor(K * 0.25)
             else:
                 if k_remove > len(clique_indices1):
                     k_remove = len(clique_indices1)
@@ -353,7 +353,7 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                 if x_candidate.sum() == 0:
                     common_neighbors = [i for i in range(N)]
                 else:
-                    for i in range(N):
+                    for i in np.random.choice(N, N, replace=False):
                         if x_candidate[i] == 0:
                             continue
                         if len(common_neighbors) == 0:
@@ -361,8 +361,13 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                         else:
                             time_complexity += min(len(common_neighbors),
                                                    len(A_neighbors[i]))
-                            common_neighbors = list(
+                            new_common_neighbors = list(
                                 set(common_neighbors).intersection(A_neighbors[i]))
+                            if len(new_common_neighbors) == 0:
+                                x_candidate[i] = 0
+                                k_add -= 1
+                            else:
+                                common_neighbors = new_common_neighbors
                             # time complexity is O(min(len(common_neighbors), len(A_neighbors[i])))
             if k_add > len(common_neighbors):
                 k_add = len(common_neighbors)
@@ -859,7 +864,7 @@ def timeOfConvergenceChangingN(Ns, K_to_N_factor, n_samples):
     n_steps = 5  # Metropolis steps
     for i, N in enumerate(Ns):
         avg_time_complexity = 0
-        K = floor(K_to_N_factor * N)
+        K = getKFromKTilde(N, 4)  # floor(K_to_N_factor * N)
         param_k = min(60, floor(K * 0.5))
         print("===================== START sampling =====================")
         print("SETTINGS:")
@@ -883,9 +888,9 @@ def timeOfConvergenceChangingN(Ns, K_to_N_factor, n_samples):
                 samples_done_count += 1
                 avg_time_complexity += time_res["avgTimeComplexity"]
                 print(
-                    f"Clique {samples_done_count} recovered (N: {N}, K: {K}, TC: {avg_time_complexity / samples_done_count})")
+                    f"Clique {samples_done_count} recovered (N: {N}, K: {K}, TC: {round(avg_time_complexity / samples_done_count)})")
         print(f"Sampling for N={N} finished with time complexity:",
-              avg_time_complexity / samples_done_count)
+              round(avg_time_complexity / samples_done_count))
         with open(f"intermediate_results_time_of_convergence_changing_N_{N}.npy", "wb") as f:
             np.save(f, np.array([x for x in results if len(x) > 0]))
     filename_suffix = datetime.now().isoformat()
@@ -917,7 +922,7 @@ def timeOfConvergenceChangingK(N_param=0, n_samples=1):
             results[str(N)].append(
                 [0 for _ in range(n_realizations_per_point)])
             K = getKFromKTilde(N, K_tilde)
-            param_k = max(1, ceil(K * 2))
+            param_k = max(1, ceil(2 * K))
             print("===================== START sampling =====================")
             print("SETTINGS:")
             print("N", N)
@@ -930,7 +935,7 @@ def timeOfConvergenceChangingK(N_param=0, n_samples=1):
                     N, K, with_neighbors=True)
                 truth = [i for i in range(N) if v[i] == 1]
                 estimate, monitoring_metropolis, monitoring_tempering, time_res = parallelTempering(
-                    A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, param_remove=0.5)
+                    A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, param_remove=0.5, with_threading=True)
                 estimate_indices = [i for i in range(N) if estimate[i] == 1]
                 diff_not_in_truth = [
                     i for i in estimate_indices if i not in truth]
@@ -1060,6 +1065,7 @@ if __name__ == '__main__':
     # To sample the convergence of PT by changing N uncomment this section
     # Ns = [200, 500, 1000, 2000, 3000, 4000,
     #       5000, 10000, 20000]  # the N's to be sampled
+    # Ns = [200, 500, 1000, 2000, 3000, 4000, 5000]  # the N's to be sampled
     # # size of the clique K will be floor(N * K_to_N_factor)
     # K_to_N_factor = 0.125
     # n_samples = 5  # number of graph realizations per N
