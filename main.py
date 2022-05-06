@@ -261,10 +261,10 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_2(x, N, K, A, method=
     return x_candidate
 
 
-def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method="switch_1", p=0.5, k=1, param_remove=0.5, beta=-1.0, A_neighbors=None):
+def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove=0.5, beta=-1.0, A_neighbors=None):
     """
     methods:
-        switch_1: switch 1 element of x with probability p
+        switch_standard: "standard" procedure
         switch_k: switch k element of x independently with probability p
     Ensure that all inserted elements are linked to the other elements of the current clique
     Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
@@ -272,21 +272,50 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
     Third implementation (fastest up to now)
     """
     x_candidate = np.copy(x)
-    if method in ["switch_1", "switch_k"]:
-        if method == "switch_1":
+    time_complexity = 0
+    if method in ["switch_standard", "switch_k"]:
+        if method == "switch_standard":
             k = 1
             if N < k:
                 k = N
-            choice = np.random.choice(N, k, replace=False)
-            for i in choice:
-                p_switch = np.random.uniform()
-                if p_switch < p:
-                    if x_candidate[i] == 1:
+            param_rem = max(1, floor(0.0005 * N))
+            param_add = max(4, floor(0.002 * N))
+            clique_indices = []
+            not_clique_indices = []
+            for i in range(N):
+                if x_candidate[i] == 1:
+                    clique_indices.append(i)
+                else:
+                    not_clique_indices.append(i)
+            if len(clique_indices) > 0:
+                if len(clique_indices) < param_rem:
+                    param_rem = len(clique_indices)
+                choice_remove = np.random.choice(
+                    clique_indices, param_rem, replace=False)
+                for i in choice_remove:
+                    p_switch_remove = np.random.uniform()
+                    if p_switch_remove < p:
                         x_candidate[i] = 0
-                    else:
-                        if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
-                            x_candidate[i] = 1
-            return x_candidate
+                        not_clique_indices.append(i)
+                        clique_indices = [j for j in clique_indices if j != i]
+            if len(not_clique_indices) < param_add:
+                param_add = len(not_clique_indices)
+            choice = np.random.choice(
+                not_clique_indices, param_add, replace=False)
+            added = []
+            for i in choice:
+                if len(clique_indices) + len(added) < K and len([j for j in added if A[i, j] != 1]) == 0 and len([j for j in clique_indices if A[i, j] != 1]) == 0:
+                    x_candidate[i] = 1
+                    added.append(i)
+            # for i in choice:
+            #     p_switch = np.random.uniform()
+            #     if p_switch < p:
+            #         if x_candidate[i] == 1:
+            #             x_candidate[i] = 0
+            #         else:
+            #             if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
+            #                 x_candidate[i] = 1
+            return x_candidate, time_complexity
         else:
             if N < k:
                 k = N
@@ -330,6 +359,8 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                         if len(common_neighbors) == 0:
                             common_neighbors = A_neighbors[i]
                         else:
+                            time_complexity += min(len(common_neighbors),
+                                                   len(A_neighbors[i]))
                             common_neighbors = list(
                                 set(common_neighbors).intersection(A_neighbors[i]))
                             # time complexity is O(min(len(common_neighbors), len(A_neighbors[i])))
@@ -347,11 +378,11 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                     if len([j for j in added if A[i, j] != 1]) == 0:
                         x_candidate[i] = 1
                         added.append(i)
-            return x_candidate
-    return x_candidate
+            return x_candidate, time_complexity
+    return x_candidate, time_complexity
 
 
-def metropolisHastings(A, N, K, x_init, n_steps, log_K_over_N, log_1_minus_K_over_N, N_count_constant, beta=1.0, param_k=10, print_progress=False, param_remove=0.5, A_neighbors=None):
+def metropolisHastings(A, N, K, x_init, n_steps, log_K_over_N, log_1_minus_K_over_N, N_count_constant, beta=1.0, param_k=10, print_progress=False, param_remove=0.5, A_neighbors=None, with_time_complexity=False):
     """
     Perform n_steps of the Metropolis Hastings algorithm
 
@@ -376,15 +407,17 @@ def metropolisHastings(A, N, K, x_init, n_steps, log_K_over_N, log_1_minus_K_ove
     if print_progress:
         printProgressBar(0, n_steps, prefix=f"Progress:",
                          suffix="Complete (size of clique estimate: 0)", length=50)
+    time_complexity = 0
     for i in range(n_steps):
         if print_progress:
             printProgressBar(i + 1, n_steps, prefix=f"Progress:",
                              suffix=f"Complete (size of clique estimate: {size_of_clique})", length=50)
         p = 0.5
-        x_candidate = drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(
-            x, N, K, A, "switch_k", p=p, k=param_k, param_remove=param_remove, beta=beta, A_neighbors=A_neighbors)
+        x_candidate, step_time_complexity = drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(
+            x, N, K, A, "switch_standard", p=p, k=param_k, param_remove=param_remove, beta=beta, A_neighbors=A_neighbors)
         H_candidate = H(x_candidate, N,
                         log_K_over_N, log_1_minus_K_over_N, N_count_constant)
+        time_complexity += step_time_complexity
         if H_candidate == float("inf"):
             # this should not happen
             continue
@@ -408,6 +441,8 @@ def metropolisHastings(A, N, K, x_init, n_steps, log_K_over_N, log_1_minus_K_ove
                 x = x_candidate
                 H_x = H_candidate
                 size_of_clique = x.sum()
+    if with_time_complexity:
+        return x, H_x, count_changes, time_complexity
     return x, H_x, count_changes
 
 
@@ -464,21 +499,24 @@ def performMetropolisOnAllReplicas(estimates, betas, A, N, K, param_k, n_steps, 
     new_estimates = [np.zeros(N) for _ in range(len(betas))]
     new_energies = [0 for _ in range(len(betas))]
     monitoring = [0 for _ in range(len(betas))]
+    time_complexities = [0 for _ in range(len(betas))]
     if with_threading:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [executor.submit(metropolisHastings, A, N, K, estimates[i], n_steps, log_K_over_N, log_1_minus_K_over_N,
-                                       N_count_constant, betas[i], param_k, param_remove=param_remove, A_neighbors=A_neighbors) for i in range(len(betas))]
+                                       N_count_constant, betas[i], param_k, param_remove=param_remove, A_neighbors=A_neighbors, with_time_complexity=True) for i in range(len(betas))]
         for i, f in enumerate(futures):
-            new_estimates[i], new_energies[i], monitoring[i] = f.result(
+            new_estimates[i], new_energies[i], monitoring[i], time_complexities[i] = f.result(
             )
     else:
         for i, beta in enumerate(betas):
-            x, H_x, count_changes = metropolisHastings(
-                A, N, K, estimates[i], n_steps, log_K_over_N, log_1_minus_K_over_N, N_count_constant, beta, param_k, param_remove=param_remove, A_neighbors=A_neighbors)
+            x, H_x, count_changes, time_complexity = metropolisHastings(
+                A, N, K, estimates[i], n_steps, log_K_over_N, log_1_minus_K_over_N, N_count_constant, beta, param_k, param_remove=param_remove, A_neighbors=A_neighbors, with_time_complexity=True)
             new_estimates[i] = x
             new_energies[i] = H_x
             monitoring[i] = count_changes
-    return new_estimates, new_energies, monitoring
+            time_complexities[i] = time_complexity
+    avg_time_complexity = np.array(time_complexities).mean()
+    return new_estimates, new_energies, monitoring, avg_time_complexity
 
 
 def performSwitchConfiguration(estimates, energies, betas, config={"how": "byPairs", "reverse": False}):
@@ -584,17 +622,21 @@ def parallelTempering(A, N, K, betas, param_k, n_steps=5, switchConfig={"how": "
     size_evolution_in_time = [0]
     size_estimate_clique = 0  # current estimated clique size
 
+    avg_time_complexity = 0
+
     # initialize the progress bar indicating the percentage of the current estimated clique size against K
     printProgressBar(0, K, prefix=f"Progress:",
                      suffix=f"of the clique size (step #{control}, beta config flips: {current_number_changes_temp})", length=50)
     # run the algorithm
     while control < limit and size_estimate_clique < K:
         # perform Metropolis on all replicas
-        estimates, energies, new_monitoring_metropolis = performMetropolisOnAllReplicas(
+        estimates, energies, new_monitoring_metropolis, step_avg_time_complexity = performMetropolisOnAllReplicas(
             estimates, betas, A, N, K, param_k, n_steps, log_K_over_N, log_1_minus_K_over_N, N_count_constant, param_remove=param_remove, A_neighbors=A_neighbors, with_threading=with_threading)
         # monitor changes by Metropolis
         monitoring_metropolis = [(control * monitoring_metropolis[i] + float(
             new_monitoring_metropolis[i]) / n_steps) / (control + 1) for i in range(len(monitoring_metropolis))]
+
+        avg_time_complexity += step_avg_time_complexity
 
         # perform configurations
         estimates, energies, monitoring_tempering_step = performSwitchConfiguration(
@@ -622,6 +664,8 @@ def parallelTempering(A, N, K, betas, param_k, n_steps=5, switchConfig={"how": "
         # an iteration was done
         control += 1
 
+    avg_time_complexity = (avg_time_complexity * len(betas)) / control
+
     # the clique has not been recovered inside the limit
     if size_estimate_clique != K:
         printProgressBar(K, K, prefix=f"Progress:",
@@ -638,7 +682,7 @@ def parallelTempering(A, N, K, betas, param_k, n_steps=5, switchConfig={"how": "
         plt.savefig(f"plots/{plot_file_name}.png")
         plt.close("all")
 
-    return estimates[0], monitoring_metropolis, {"switchCount": current_number_changes_temp, "switchCountBeta1": current_number_changes_temp_beta_1}, {"iterations": control, "time": (stop - start).seconds}
+    return estimates[0], monitoring_metropolis, {"switchCount": current_number_changes_temp, "switchCountBeta1": current_number_changes_temp_beta_1}, {"iterations": control, "time": (stop - start).seconds, "avgTimeComplexity": avg_time_complexity}
 
 
 def testParallelTempering(N, K, param_k, betas=[], n_steps=5, from_file=""):
@@ -798,7 +842,7 @@ def computeTimeOverSamples(N, K_tilde, n_samples, prefix_plot_file="sampling"):
     print(monitoring_changes_beta1)
 
 
-# data for the time convergence analyze
+# data for the time convergence changing K analyze
 K_tildes_N2000 = [1.64, 1.73, 1.82, 1.92, 2.01,
                   2.09, 2.18, 2.28, 2.37, 2.46, 2.55, 2.64, 2.73]
 K_tildes_N3000 = [1.73, 1.82, 1.9, 1.99, 2.07, 2.16,
@@ -814,8 +858,9 @@ def timeOfConvergenceChangingN(Ns, K_to_N_factor, n_samples):
     betas = [1 - i * 0.05 for i in range(19)]
     n_steps = 5  # Metropolis steps
     for i, N in enumerate(Ns):
+        avg_time_complexity = 0
         K = floor(K_to_N_factor * N)
-        param_k = min(40, floor(K * 0.5))
+        param_k = min(60, floor(K * 0.5))
         print("===================== START sampling =====================")
         print("SETTINGS:")
         print("N", N)
@@ -836,18 +881,30 @@ def timeOfConvergenceChangingN(Ns, K_to_N_factor, n_samples):
             if len(diff_not_in_truth) == 0 and len(diff_not_in_estimate) == 0:
                 results[i].append(time_res["iterations"])
                 samples_done_count += 1
+                avg_time_complexity += time_res["avgTimeComplexity"]
                 print(
-                    f"Clique {samples_done_count} recovered (N: {N}, K: {K})")
-        # with open(f"test_param_k_2_intermediate_results_time_of_convergence_changing_N_{N}.npy", "wb") as f:
-        #     np.save(f, np.array([x for x in results if len(x) > 0]))
-    # with open(f"test_param_k_2_final_results_time_of_convergence_changing_N_from_{Ns[0]}_to_{Ns[-1]}.npy", "wb") as f:
-    #     np.save(f, np.array(results))
+                    f"Clique {samples_done_count} recovered (N: {N}, K: {K}, TC: {avg_time_complexity / samples_done_count})")
+        print(f"Sampling for N={N} finished with time complexity:",
+              avg_time_complexity / samples_done_count)
+        with open(f"intermediate_results_time_of_convergence_changing_N_{N}.npy", "wb") as f:
+            np.save(f, np.array([x for x in results if len(x) > 0]))
+    filename_suffix = datetime.now().isoformat()
+    filename_suffix = filename_suffix.replace(":", "-")
+    if "." in filename_suffix:
+        filename_suffix = filename_suffix[:filename_suffix.index(".")]
+        filename_suffix = filename_suffix.replace(".", "-")
+    with open(f"final_results_time_of_convergence_changing_N_from_{Ns[0]}_to_{Ns[-1]}_{filename_suffix}.npy", "wb") as f:
+        np.save(f, np.array(results))
 
 
-def timeOfConvergenceChangingK(N_param=0):
+def timeOfConvergenceChangingK(N_param=0, n_samples=1):
     password = input("Type your password and press enter:")
-    n_realizations_per_point = 1
+    n_realizations_per_point = n_samples
     Ns = [2000, 3000, 4000, 5000]
+    K_tildes_N2000.reverse()
+    K_tildes_N3000.reverse()
+    K_tildes_N4000.reverse()
+    K_tildes_N5000.reverse()
     K_tildes = [K_tildes_N2000, K_tildes_N3000,
                 K_tildes_N4000, K_tildes_N5000]
     results = {"2000": [], "3000": [], "4000": [], "5000": []}
@@ -860,7 +917,7 @@ def timeOfConvergenceChangingK(N_param=0):
             results[str(N)].append(
                 [0 for _ in range(n_realizations_per_point)])
             K = getKFromKTilde(N, K_tilde)
-            param_k = 2 * K
+            param_k = max(1, ceil(K * 2))
             print("===================== START sampling =====================")
             print("SETTINGS:")
             print("N", N)
@@ -873,7 +930,7 @@ def timeOfConvergenceChangingK(N_param=0):
                     N, K, with_neighbors=True)
                 truth = [i for i in range(N) if v[i] == 1]
                 estimate, monitoring_metropolis, monitoring_tempering, time_res = parallelTempering(
-                    A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, with_threading=True)
+                    A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, param_remove=0.5, with_threading=True)
                 estimate_indices = [i for i in range(N) if estimate[i] == 1]
                 diff_not_in_truth = [
                     i for i in estimate_indices if i not in truth]
@@ -913,24 +970,65 @@ def createGraphTimeOfConvergence(filename):
     plt.show()
 
 
-def createGraphTimeOfConvergenceChangingN(Ns, filename, filename_time_complexity):
+def createGraphTimeOfConvergencePTStepsChangingN(Ns, filename, K_to_N_factor, param_k_display):
+    with open(f"{filename}.npy", "rb") as f:
+        iterations = np.load(f)
+    iterations_mean = [x.mean() for x in iterations]
+    iterations_std_dev = [x.std() for x in iterations]
+    # interpolate_line_x = [Ns[0], Ns[-1]]
+    # interpolate_line_y = np.interp(interpolate_line_x, Ns, iterations_mean)
+    plt.errorbar(np.array(Ns), np.array(iterations_mean),
+                 yerr=np.array(iterations_std_dev), fmt="xb", ecolor="b", capsize=3)
+    display_factor = round(K_to_N_factor * 100)
+    plt.xlabel(
+        f"Size of the graph (N) with planted clique of size K ({display_factor}% of N) and parameter k {param_k_display} (for candidate)")
+    # plt.plot(np.array(interpolate_line_x),
+    #          np.array(interpolate_line_y), color="c")
+    plt.ylabel("Number of PT steps needed")
+    plt.show()
+
+
+def createGraphTimeOfConvergencePseudoTimeChangingN(Ns, filename, filename_time_complexity, K_to_N_factor, param_k_display):
     with open(f"{filename}.npy", "rb") as f:
         iterations = np.load(f)
     with open(f"{filename_time_complexity}.npy", "rb") as f:
         times_complexities = np.load(f)
-    iterations_mean = [x.mean() for x in iterations]
-    iterations_std_dev = [x.std() for x in iterations]
-    time_complexity_first = times_complexities[0]
     times_complexities_standardized = [
-        times_complexities[i] / time_complexity_first for i in range(len(times_complexities))]
+        times_complexities[i] / Ns[i] for i in range(len(times_complexities))]
     iterations_with_time_complexity_mean = [np.array(
         [x[j] * times_complexities_standardized[i] for j in range(len(x))]).mean() for i, x in enumerate(iterations)]
     iterations_with_time_complexity_std_dev = [np.array(
         [x[j] * times_complexities_standardized[i] for j in range(len(x))]).std() for i, x in enumerate(iterations)]
-    plt.errorbar(np.array(Ns), np.array(iterations_mean),
-                 yerr=np.array(iterations_std_dev), fmt=".k")
+    # interpolate_line_x = [Ns[0], Ns[-1]]
+    # interpolate_line_y = np.interp(
+    #     interpolate_line_x, Ns, iterations_with_time_complexity_mean)
     plt.errorbar(np.array(Ns), np.array(iterations_with_time_complexity_mean),
-                 yerr=np.array(iterations_with_time_complexity_std_dev), fmt=".r", ecolor="red")
+                 yerr=np.array(iterations_with_time_complexity_std_dev), fmt="xb", ecolor="b", capsize=3)
+    # plt.plot(np.array(interpolate_line_x),
+    #          np.array(interpolate_line_y), color="c")
+    display_factor = round(K_to_N_factor * 100)
+    plt.xlabel(
+        f"Size of the graph (N) with planted clique of size K ({display_factor}% of N) and parameter k {param_k_display} (for candidate)")
+    plt.ylabel("'Time': # of PT steps * ((avg # of operations for N) / N)")
+    plt.show()
+
+
+def createGraphPseudoTimeOperationsChangingN(Ns, filename_time_complexity, K_to_N_factor, param_k_display):
+    with open(f"{filename_time_complexity}.npy", "rb") as f:
+        times_complexities = np.load(f)
+    times_complexities_standardized = [
+        times_complexities[i] / Ns[i] for i in range(len(times_complexities))]
+    interpolate_line_x = [Ns[0], Ns[-1]]
+    interpolate_line_y = np.interp(
+        interpolate_line_x, Ns, times_complexities_standardized)
+    plt.errorbar(np.array(Ns), np.array(
+        times_complexities_standardized), fmt="xb", ecolor="b", capsize=3)
+    plt.plot(np.array(interpolate_line_x),
+             np.array(interpolate_line_y), color="k")
+    display_factor = round(K_to_N_factor * 100)
+    plt.xlabel(
+        f"Size of the graph (N) with planted clique of size K ({display_factor}% of N) and parameter k {param_k_display} (for candidate)")
+    plt.ylabel("(Avg # of operations for N per PT step) / N")
     plt.show()
 
 
@@ -944,5 +1042,39 @@ def createGraphTimeComplexity(filename):
 
 
 if __name__ == '__main__':
-    timeOfConvergenceChangingK()
+    # ===============================
+    # To test the clique recovery with PT uncomment this section and change the values of K_tilde_test, N_test, K_test (and param_k_test) according to your needs
+    # K_tilde_test = 1.92
+    # N_test = 2000
+    # K_test = getKFromKTilde(N_test, K_tilde_test)
+    # param_k_test = 2 * K_test
+    # testParallelTempering(N_test, K_test, param_k_test)
+    # ===============================
+
+    # ===============================
+    # To sample the convergence of PT with the values of the paper (changing K) uncomment this section
+    timeOfConvergenceChangingK(n_samples=10)
+    # ===============================
+
+    # ===============================
+    # To sample the convergence of PT by changing N uncomment this section
+    # Ns = [200, 500, 1000, 2000, 3000, 4000,
+    #       5000, 10000, 20000]  # the N's to be sampled
+    # # size of the clique K will be floor(N * K_to_N_factor)
+    # K_to_N_factor = 0.125
+    # n_samples = 5  # number of graph realizations per N
+    # timeOfConvergenceChangingN(Ns, K_to_N_factor, n_samples)
+    # ===============================
+
+    # ===============================
+    # Create graphs from data
+    # filename = f"final_results_time_of_convergence_changing_N_from_{Ns[0]}_to_{Ns[-1]}_2022-05-05T20-35-00"
+    # filename_times = f"time_complexity_from_{Ns[0]}_to_{Ns[-1]}_Kfactor_0_125"
+    # createGraphPseudoTimeOperationsChangingN(
+    #     Ns, filename_times, 0.125, "min(60, floor(0.5 * K))")
+    # createGraphTimeOfConvergencePTStepsChangingN(
+    #     Ns, filename, 0.125, "min(60, floor(0.5 * K))")
+    # createGraphTimeOfConvergencePseudoTimeChangingN(
+    #     Ns, filename, filename_times, 0.125, "min(60, floor(0.5 * K))")
+    # ===============================
     pass
