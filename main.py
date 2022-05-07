@@ -859,7 +859,8 @@ if __name__ == '__main__':
 
     # ===============================
     # To sample the convergence of PT with the values of the paper (changing K) uncomment this section
-    # timeOfConvergenceChangingK(N_param=1000, n_samples=5)
+    timeOfConvergenceChangingK(
+        N_param=3000, n_samples=5, send_result_email=True)
     # ===============================
 
     # ===============================
