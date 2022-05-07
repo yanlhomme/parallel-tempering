@@ -36,7 +36,6 @@ def send_email(to, subject, content, attachment_filename_with_extension, pwd):
     msg.attach(part)
 
     try:
-        pwd = "ryqkwterjrjgktgj"
         server = smtplib.SMTP('smtp-mail.outlook.com',
                               port=587)
         server.ehlo()

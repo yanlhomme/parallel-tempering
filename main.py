@@ -13,6 +13,7 @@ LOG_1_HALF = np.log(0.5)
 def createRandomGraphWithPlantedClique(N, K, with_neighbors=False):
     """
     Return matrix A and planted clique vector v of a realization of a planted random graph of size N and planted clique size K
+    if with_neighbors is True then it returns also a list of list of neighbors indices for each node
     """
     v_index_choices = np.random.choice(N, K, replace=False)
     v = np.array([1 if i in v_index_choices else 0 for i in range(N)])
@@ -63,213 +64,14 @@ def H(x, N, log_K_over_N, log_1_minus_K_over_N, N_count_constant):
     return first_sum - second_sum
 
 
-def drawCandidate(x, N, method="switch_1", p=0.5, k=1):
-    """
-    methods:
-        switch_1: switch 1 element of x with probability p
-        switch_k: switch k element of x independently with probability p
-    Old method that did not take into account the fact that the inserted elements have to be linked to the other elements of the current clique
-    """
-    x_candidate = np.copy(x)
-    if method in ["switch_1", "switch_k"]:
-        if method == "switch_1":
-            k = 1
-        choice = np.random.choice(N, k, replace=True)
-        for i in choice:
-            p_switch = np.random.uniform()
-            if p_switch < p:
-                x_candidate[i] = 1 - x_candidate[i]
-        return x_candidate
-    return x_candidate
-
-
-def drawCandidateWithCliqueCheck(x, N, A, method="switch_1", p=0.5, k=1):
-    """
-    methods:
-        switch_1: switch 1 element of x with probability p
-        switch_k: switch k element of x independently with probability p
-    Ensure that all inserted elements are linked to the other elements of the current clique
-    return a candidate (np array with entries 0 or 1)
-    (Computation really slow use one of the drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes methods instead)
-    """
-    x_candidate = np.copy(x)
-    if method in ["switch_1", "switch_k"]:
-        if method == "switch_1":
-            k = 1
-        if N < k:
-            k = N
-        choice = np.random.choice(N, k, replace=False)
-        for i in choice:
-            p_switch = np.random.uniform()
-            if p_switch < p:
-                if x_candidate[i] == 1:
-                    x_candidate[i] = 0
-                else:
-                    if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
-                        x_candidate[i] = 1
-        return x_candidate
-    return x_candidate
-
-
-def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_1(x, N, K, A, method="switch_1", p=0.5, k=1, param_remove=0.5):
-    """
-    methods:
-        switch_1: switch 1 element of x with probability p
-        switch_k: switch k element of x independently with probability p
-    Ensure that all inserted elements are linked to the other elements of the current clique
-    Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
-    return a candidate (np array with entries 0 or 1)
-    First implementation (not the fastest)
-    """
-    x_candidate = np.copy(x)
-    if method in ["switch_1", "switch_k"]:
-        if method == "switch_1":
-            k = 1
-            if N < k:
-                k = N
-            choice = np.random.choice(N, k, replace=False)
-            for i in choice:
-                p_switch = np.random.uniform()
-                if p_switch < p:
-                    if x_candidate[i] == 1:
-                        x_candidate[i] = 0
-                    else:
-                        if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
-                            x_candidate[i] = 1
-            return x_candidate
-        else:
-            if N < k:
-                k = N
-            clique_indices1 = [i for i in range(N) if x_candidate[i] == 1]
-            k_remove = max(
-                1, floor(len(clique_indices1) * param_remove))
-            k_add = k - k_remove
-            if len(clique_indices1) == 0:
-                k_add = k
-            else:
-                if k_remove > len(clique_indices1):
-                    k_remove = len(clique_indices1)
-                    k_add = k - k_remove
-                choice_remove = np.random.choice(
-                    clique_indices1, k_remove, replace=False)
-                for i in choice_remove:
-                    p_switch = np.random.uniform()
-                    if p_switch < p:
-                        x_candidate[i] = 0
-            common_neighbors = []
-            clique_indices2 = [i for i in range(N) if x_candidate[i] == 1]
-            common_vector = np.dot(A, x_candidate)
-            clique_indices2_len = len(clique_indices2)
-            for i in range(N):
-                if common_vector[i] == clique_indices2_len:
-                    common_neighbors.append(i)
-            if k_add > len(common_neighbors):
-                k_add = len(common_neighbors)
-            choice_add = np.random.choice(
-                common_neighbors, k_add, replace=False)
-            added = []
-            for i in choice_add:
-                p_switch = np.random.uniform()
-                if p_switch < p:
-                    if len([j for j in added if A[i, j] != 1]) == 0:
-                        x_candidate[i] = 1
-                        added.append(i)
-            return x_candidate
-    return x_candidate
-
-
-def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_2(x, N, K, A, method="switch_1", p=0.5, k=1, param_remove=0.5):
-    """
-    methods:
-        switch_1: switch 1 element of x with probability p
-        switch_k: switch k element of x independently with probability p
-    Ensure that all inserted elements are linked to the other elements of the current clique
-    Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
-    return a candidate (np array with entries 0 or 1)
-    Second implementation (not the fastest)
-    """
-    x_candidate = np.copy(x)
-    if method in ["switch_1", "switch_k"]:
-        if method == "switch_1":
-            k = 1
-            if N < k:
-                k = N
-            choice = np.random.choice(N, k, replace=False)
-            for i in choice:
-                p_switch = np.random.uniform()
-                if p_switch < p:
-                    if x_candidate[i] == 1:
-                        x_candidate[i] = 0
-                    else:
-                        if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
-                            x_candidate[i] = 1
-            return x_candidate
-        else:
-            if N < k:
-                k = N
-            clique_indices1 = [i for i in range(N) if x_candidate[i] == 1]
-            k_remove = max(
-                1, floor(len(clique_indices1) * param_remove))
-            k_add = k - k_remove
-            if len(clique_indices1) == 0:
-                k_add = floor(K * 0.5)
-            else:
-                if k_remove > len(clique_indices1):
-                    k_remove = len(clique_indices1)
-                    k_add = k - k_remove
-                choice_remove = np.random.choice(
-                    clique_indices1, k_remove, replace=False)
-                for i in choice_remove:
-                    p_switch = np.random.uniform()
-                    if p_switch < p:
-                        x_candidate[i] = 0
-            not_clique_indices2 = [i for i in range(N) if x_candidate[i] == 0]
-            clique_indices2 = [i for i in range(N) if x_candidate[i] == 1]
-            if k_add > len(not_clique_indices2):
-                k_add = len(not_clique_indices2)
-            choice_add = np.random.choice(
-                not_clique_indices2, k_add, replace=False)
-            n_rejected = 0
-            for i in choice_add:
-                p_switch = np.random.uniform()
-                if p_switch < p:
-                    linked = True
-                    for j in clique_indices2:
-                        if A[i, j] != 1:
-                            linked = False
-                            break
-                    if linked:
-                        x_candidate[i] = 1
-                        clique_indices2.append(i)
-                    else:
-                        n_rejected += 1
-            if n_rejected >= 0.5 * k_add:
-                not_clique_indices2 = [
-                    i for i in range(N) if x_candidate[i] == 0]
-                choice_add = np.random.choice(
-                    not_clique_indices2, n_rejected, replace=False)
-                for i in choice_add:
-                    linked = True
-                    for j in clique_indices2:
-                        if A[i, j] != 1:
-                            linked = False
-                            break
-                    if linked:
-                        x_candidate[i] = 1
-                        clique_indices2.append(i)
-            return x_candidate
-    return x_candidate
-
-
-def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove=0.5, beta=-1.0, A_neighbors=None):
+def drawCandidate(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove=0.5, beta=-1.0, A_neighbors=None):
     """
     methods:
         switch_standard: "standard" procedure
-        switch_k: switch k element of x independently with probability p
+        switch_k: switch k element of x: k_remove = (param_remove * min(k, size of current clique)) elements are removed with probability p, (k - k_remove) from the common neighbors of the current clique x are added with probability (p + 0.25 * beta)
     Ensure that all inserted elements are linked to the other elements of the current clique
     Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
-    return a candidate (np array with entries 0 or 1)
-    Third implementation (fastest up to now)
+    return a candidate (np array with entries 0 or 1), and an integer representing the order of the number of operations needed to compute the common neighbors of the current clique (0 if method is switch_standard)
     """
     x_candidate = np.copy(x)
     time_complexity = 0
@@ -307,14 +109,6 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                 if len(clique_indices) + len(added) < K and len([j for j in added if A[i, j] != 1]) == 0 and len([j for j in clique_indices if A[i, j] != 1]) == 0:
                     x_candidate[i] = 1
                     added.append(i)
-            # for i in choice:
-            #     p_switch = np.random.uniform()
-            #     if p_switch < p:
-            #         if x_candidate[i] == 1:
-            #             x_candidate[i] = 0
-            #         else:
-            #             if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
-            #                 x_candidate[i] = 1
             return x_candidate, time_complexity
         else:
             if N < k:
@@ -324,6 +118,7 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                 1, floor(min(len(clique_indices1), k) * param_remove))
             k_add = k - k_remove
             if len(clique_indices1) == 0:
+                # if the current clique is empty, then try to add a quarter of the target size
                 k_add = floor(K * 0.25)
             else:
                 if k_remove > len(clique_indices1):
@@ -336,6 +131,7 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                     if p_switch < p:
                         x_candidate[i] = 0
             common_neighbors = []
+            # the difference between the 2 statements below to compute the common neighbors is only for time purpose
             if A_neighbors == None:
                 for i in range(N):
                     if x_candidate[i] == 0:
@@ -364,6 +160,7 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                             new_common_neighbors = list(
                                 set(common_neighbors).intersection(A_neighbors[i]))
                             if len(new_common_neighbors) == 0:
+                                # if there are no common neighbor for the elements of the clique, remove this element from the clique
                                 x_candidate[i] = 0
                                 k_add -= 1
                             else:
@@ -373,6 +170,7 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                 k_add = len(common_neighbors)
             choice_add = np.random.choice(
                 common_neighbors, k_add, replace=False)
+            size_of_the_clique_before_adding = x_candidate.sum()
             added = []
             for i in choice_add:
                 p_switch = np.random.uniform()
@@ -380,7 +178,7 @@ def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(x, N, K, A, method=
                 if beta > 0:
                     p_accept += beta * 0.25
                 if p_switch < p_accept:
-                    if len([j for j in added if A[i, j] != 1]) == 0:
+                    if size_of_the_clique_before_adding + len(added) < K and len([j for j in added if A[i, j] != 1]) == 0:
                         x_candidate[i] = 1
                         added.append(i)
             return x_candidate, time_complexity
@@ -393,16 +191,20 @@ def metropolisHastings(A, N, K, x_init, n_steps, log_K_over_N, log_1_minus_K_ove
 
     Parameters:
     A, N, K, x_init, n_steps: in the context are self explanatory
+    log_K_over_N, log_1_minus_K_over_N, N_count_constant: are constants for computation
     beta: the inverse temperature
     param_k: parameter k for the drawCandidate method (number of change's tries in the estimate)
-    candidate_method: either "dynamic" to call the drawCandidateWithCliqueCheckAndPenalizeRemoving or any str to call drawCandidateWithCliqueCheck
     print_progress: bool, show or not a progress bar (when used in the PT algorithm, please set to False)
+    param_remove: float in (0, 1) for the drawCandidate method
+    A_neighbors: see createRandomGraphWithPlantedClique
+    with_time_complexity: whether to compute the order of the operations needed to compute the common neighbors in the drawCandidate method
 
     Return:
     x, H_x, info
     x: np array representing the new estimate
     H_x: float, energy associated with the new estimate
-    info: dict {"changes": # of time the candidate has been accepted, "candInf": # number of time the energy of the candidate is infinity (should be 0), "xInf": # number of time the energy of the current estimate is infinity (should be 0)}
+    count_changes: # of time the candidate has been accepted
+    if with_time_complexity is True: return also the order of the # of operations needed in the drawCandidate method
     """
 
     x = np.copy(x_init)
@@ -418,8 +220,9 @@ def metropolisHastings(A, N, K, x_init, n_steps, log_K_over_N, log_1_minus_K_ove
             printProgressBar(i + 1, n_steps, prefix=f"Progress:",
                              suffix=f"Complete (size of clique estimate: {size_of_clique})", length=50)
         p = 0.5
-        x_candidate, step_time_complexity = drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_3(
-            x, N, K, A, "switch_k", p=p, k=param_k, param_remove=param_remove, beta=beta, A_neighbors=A_neighbors)
+        candidate_method = "switch_k"
+        x_candidate, step_time_complexity = drawCandidate(
+            x, N, K, A, candidate_method, p=p, k=param_k, param_remove=param_remove, beta=beta, A_neighbors=A_neighbors)
         H_candidate = H(x_candidate, N,
                         log_K_over_N, log_1_minus_K_over_N, N_count_constant)
         time_complexity += step_time_complexity
@@ -495,11 +298,13 @@ def performMetropolisOnAllReplicas(estimates, betas, A, N, K, param_k, n_steps, 
     Call the Metropolis algorithm for each replica
 
     Parameters: self explanatory in the context
+    with_threading: whether to perform the Metropolis calls in parallel for each beta or not
 
     Return:
     new_estimates: list of np arrays representing the new estimates for each replica
     new_energies: list of float of the energies associated to the new estimates
     monitoring: list of info (see metropolisHastings) for each replica
+    avg_time_complexity: order of the average # of operations needed in the drawCandidate calls (averaged over the different betas)
     """
     new_estimates = [np.zeros(N) for _ in range(len(betas))]
     new_energies = [0 for _ in range(len(betas))]
@@ -684,13 +489,13 @@ def parallelTempering(A, N, K, betas, param_k, n_steps=5, switchConfig={"how": "
     if not without_plot:
         plt.plot(np.arange(len(size_evolution_in_time)),
                  np.array(size_evolution_in_time))
-        plt.savefig(f"plots/{plot_file_name}.png")
+        plt.savefig(f"{plot_file_name}.png")
         plt.close("all")
 
     return estimates[0], monitoring_metropolis, {"switchCount": current_number_changes_temp, "switchCountBeta1": current_number_changes_temp_beta_1}, {"iterations": control, "time": (stop - start).seconds, "avgTimeComplexity": avg_time_complexity}
 
 
-def testParallelTempering(N, K, param_k, betas=[], n_steps=5, from_file=""):
+def testParallelTempering(N, K, betas=[], n_steps=5, from_file=""):
     """
     Test the parallel tempering algorithm
     """
@@ -714,9 +519,13 @@ def testParallelTempering(N, K, param_k, betas=[], n_steps=5, from_file=""):
     if len(betas) == 0:
         betas = [1 - i * 0.05 for i in range(19)]
 
+    # parameters
+    param_remove = getParam_Remove(N, K)
+    param_k = getParam_k(N, K)
+
     # run PT and compute elapsed time
     estimate, monitoring_metropolis, monitoring_tempering, time_result = parallelTempering(
-        A, N, K, betas, param_k, n_steps, A_neighbors=A_neighbors, with_threading=True, param_remove=0.5)
+        A, N, K, betas, param_k, n_steps, A_neighbors=A_neighbors, with_threading=True, param_remove=param_remove)
 
     # result compared to actual clique
     estimate_indices = [i for i in range(N) if estimate[i] == 1]
@@ -735,8 +544,8 @@ def testParallelTempering(N, K, param_k, betas=[], n_steps=5, from_file=""):
     try:
         print("Total # of iterations:", time_result["iterations"])
         time_needed = time_result["time"]
-        print("Elapsed time:", ceil(time_needed / 60), "min",
-              time_needed - ceil(time_needed / 60), "sec")
+        print("Elapsed time:", floor(time_needed / 60.0), "min",
+              time_needed - floor(time_needed / 60.0) * 60, "sec")
     except:
         pass
 
@@ -766,6 +575,18 @@ def getKFromKTilde(N, K_tilde):
     return max(1, round(K_tilde * np.log2(N)))
 
 
+def getParam_k(N, K):
+    if K / np.log2(N) > 3:
+        return min(60, max(1, floor(K * 0.5))) + floor(N / 1000.0)
+    return max(1, 2 * K)
+
+
+def getParam_Remove(N, K):
+    if K / np.log2(N) > 3:
+        return 0.25
+    return 0.5
+
+
 def generateGraphSamplesAndSave(n_samples, N, K, filename_base="graph"):
     for i in range(1, n_samples + 1):
         np.random.seed(i * 100)
@@ -789,64 +610,6 @@ def openGraphAndClique(filename):
         return A, v
 
 
-def computeTimeOverSamples(N, K_tilde, n_samples, prefix_plot_file="sampling"):
-    time_results = []
-    n_iterations_results = []
-    monitoring_changes_beta1 = []
-    n_not_recovered = 0
-    K = getKFromKTilde(N, K_tilde)
-    param_k = 2 * K
-    # initialize inverse temperatures as in the paper
-    betas = [1 - i * 0.05 for i in range(19)]
-    n_steps = 5  # Metropolis steps
-    print("===================== START sampling =====================")
-    print("SETTINGS:")
-    print("N", N)
-    print("K", K)
-    print("param_k", param_k)
-    for i in range(n_samples):
-        # create planted random graph
-        A, v = createRandomGraphWithPlantedClique(N, K)
-        truth = [i for i in range(N) if v[i] == 1]
-        # run PT
-        plot_file_name = f"{prefix_plot_file}_{i+1}"
-        estimate, monitoring_metropolis, monitoring_tempering, time_res = parallelTempering(
-            A, N, K, betas, param_k, n_steps, plot_file_name=plot_file_name)
-
-        # result compared to actual clique
-        estimate_indices = [i for i in range(N) if estimate[i] == 1]
-        diff_not_in_truth = [i for i in estimate_indices if i not in truth]
-        diff_not_in_estimate = [i for i in truth if i not in estimate_indices]
-        if not (len(diff_not_in_truth) == 0 and len(diff_not_in_estimate) == 0):
-            n_not_recovered += 1
-            print(f"Clique {i + 1} not recovered !")
-        else:
-            n_iterations_results.append(time_res["iterations"])
-            time_results.append(time_res["time"])
-            monitoring_changes_beta1.append(
-                monitoring_metropolis[0])
-            print(f"Clique {i + 1} recovered")
-
-    date_file = datetime.now().replace(microsecond=0).isoformat().replace(":", "-")
-    try:
-        with open(f"results_sampling_{N}_{K}_{date_file}.npy", "wb") as f:
-            np.save(f, np.array([N, K, param_k]))
-            np.save(f, np.array(time_results))
-            np.save(f, np.array(n_iterations_results))
-            np.save(f, np.array(monitoring_changes_beta1))
-    except:
-        print("name of file failed !!!!")
-        with open(f"results_sampling_{N}_{K}_date.npy", "wb") as f:
-            np.save(f, np.array([N, K, param_k]))
-            np.save(f, np.array(time_results))
-            np.save(f, np.array(n_iterations_results))
-            np.save(f, np.array(monitoring_changes_beta1))
-    print("====================== END sampling ======================")
-    print(time_results)
-    print(n_iterations_results)
-    print(monitoring_changes_beta1)
-
-
 # data for the time convergence changing K analyze
 K_tildes_N2000 = [1.64, 1.73, 1.82, 1.92, 2.01,
                   2.09, 2.18, 2.28, 2.37, 2.46, 2.55, 2.64, 2.73]
@@ -858,26 +621,40 @@ K_tildes_N5000 = [2.19, 2.28, 2.36, 2.44, 2.52, 2.61, 2.68,
                   2.77, 2.85, 2.93, 3.01, 3.09, 3.17, 3.26, 3.34, 3.42, 3.5]
 
 
-def timeOfConvergenceChangingN(Ns, K_to_N_factor, n_samples):
-    results = [[] for _ in range(len(Ns))]
-    betas = [1 - i * 0.05 for i in range(19)]
+def timeOfConvergenceChangingN(Ns, n_samples, K_to_N_factor=0.125, K_tilde=-1):
+    """
+    Run the PT algorithm for each N in Ns (n_samples for each N) and save # of iterations needed for the PT in files
+
+    Parameters:
+    Ns: list of integers (sizes of graphs to be sampled)
+    n_samples: the number of graph's realizations for each N in Ns
+    K_to_N_factor: if K_tilde < 0 then the size of the planted clique is N * K_to_N_factor
+    K_tilde: compute the size of the planted clique as K_tilde * log_2(N) 
+    """
+    results = [[] for _ in range(len(
+        Ns))]  # save the results (number of PT iterations needed to recover the planted clique)
+    betas = [1 - i * 0.05 for i in range(19)]  # default betas
     n_steps = 5  # Metropolis steps
     for i, N in enumerate(Ns):
         avg_time_complexity = 0
-        K = getKFromKTilde(N, 4)  # floor(K_to_N_factor * N)
-        param_k = min(60, floor(K * 0.5))
+        if K_tilde > 0:
+            K = getKFromKTilde(N, K_tilde)
+        else:
+            K = floor(K_to_N_factor * N)
+        param_k = getParam_k(N, K)
         print("===================== START sampling =====================")
         print("SETTINGS:")
         print("N", N)
         print("K", K)
         print("param_k", param_k)
         samples_done_count = 0
+        param_remove = getParam_Remove(N, K)
         while samples_done_count < n_samples:
             A, v, A_neighbors = createRandomGraphWithPlantedClique(
                 N, K, with_neighbors=True)
             truth = [i for i in range(N) if v[i] == 1]
             estimate, monitoring_metropolis, monitoring_tempering, time_res = parallelTempering(
-                A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, param_remove=0.25, with_threading=True)
+                A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, param_remove=param_remove, with_threading=True)
             estimate_indices = [i for i in range(N) if estimate[i] == 1]
             diff_not_in_truth = [
                 i for i in estimate_indices if i not in truth]
@@ -902,17 +679,26 @@ def timeOfConvergenceChangingN(Ns, K_to_N_factor, n_samples):
         np.save(f, np.array(results))
 
 
-def timeOfConvergenceChangingK(N_param=0, n_samples=1):
-    password = input("Type your password and press enter:")
+def timeOfConvergenceChangingK(N_param=0, n_samples=1, send_result_email=False):
+    """
+    Run the PT algorithm for each N in Ns (or only for N_param if not 0) and over the different K_tilde in the corresponding list
+
+    Parameters:
+    N_param: if 0 then run over all N in Ns, else if N_param is in Ns then run only for the specified N_param
+    n_samples: number of samples for each K_tilde
+    """
+    pwd = ""
+    if send_result_email:
+        pwd = input("Input password and press Enter: ")
     n_realizations_per_point = n_samples
-    Ns = [2000, 3000, 4000, 5000]
+    Ns = [2000, 3000, 4000, 5000, 1000]
     K_tildes_N2000.reverse()
     K_tildes_N3000.reverse()
     K_tildes_N4000.reverse()
     K_tildes_N5000.reverse()
     K_tildes = [K_tildes_N2000, K_tildes_N3000,
-                K_tildes_N4000, K_tildes_N5000]
-    results = {"2000": [], "3000": [], "4000": [], "5000": []}
+                K_tildes_N4000, K_tildes_N5000, K_tildes_N2000]
+    results = {"2000": [], "3000": [], "4000": [], "5000": [], "1000": []}
     betas = [1 - i * 0.05 for i in range(19)]
     n_steps = 5  # Metropolis steps
     for i, N in enumerate(Ns):
@@ -922,7 +708,8 @@ def timeOfConvergenceChangingK(N_param=0, n_samples=1):
             results[str(N)].append(
                 [0 for _ in range(n_realizations_per_point)])
             K = getKFromKTilde(N, K_tilde)
-            param_k = max(1, ceil(2 * K))
+            param_k = getParam_k(N, K)
+            param_remove = getParam_Remove(N, K)
             print("===================== START sampling =====================")
             print("SETTINGS:")
             print("N", N)
@@ -935,7 +722,7 @@ def timeOfConvergenceChangingK(N_param=0, n_samples=1):
                     N, K, with_neighbors=True)
                 truth = [i for i in range(N) if v[i] == 1]
                 estimate, monitoring_metropolis, monitoring_tempering, time_res = parallelTempering(
-                    A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, param_remove=0.5, with_threading=True)
+                    A, N, K, betas, param_k, n_steps, without_plot=True, A_neighbors=A_neighbors, param_remove=param_remove, with_threading=True)
                 estimate_indices = [i for i in range(N) if estimate[i] == 1]
                 diff_not_in_truth = [
                     i for i in estimate_indices if i not in truth]
@@ -951,16 +738,25 @@ def timeOfConvergenceChangingK(N_param=0, n_samples=1):
                 #     np.save(f, np.array(results[str(N)]))
         with open(f"results_time_of_convergence_{N}_end.npy", "wb") as f:
             np.save(f, np.array(results[str(N)]))
+        if N_param != 0 and send_result_email:
+            status = send_email("yan-lhomme@outlook.com", "Test time of convergence",
+                                f"Test for {n_realizations_per_point} realizations", f"results_time_of_convergence_{N}_end.npy", pwd)
+            print("Sent email:", status)
     if N_param == 0:
         with open(f"results_time_of_convergence_finished.npy", "wb") as f:
             np.save(f, np.array(results["2000"]))
             np.save(f, np.array(results["3000"]))
             np.save(f, np.array(results["4000"]))
             np.save(f, np.array(results["5000"]))
-        status = send_email("yan-lhomme@outlook.com", "Test time of convergence",
-                            f"Test for {n_realizations_per_point} realizations", "results_time_of_convergence_finished.npy", password)
-        print("Sent email:", status)
+            if 1000 in Ns:
+                np.save(f, np.array(results["1000"]))
+        if send_result_email:
+            status = send_email("yan-lhomme@outlook.com", "Test time of convergence",
+                                f"Test for {n_realizations_per_point} realizations", "results_time_of_convergence_finished.npy", pwd)
+            print("Sent email:", status)
 
+
+# Plots
 
 def createGraphTimeOfConvergence(filename):
     # warning reverse
@@ -975,7 +771,7 @@ def createGraphTimeOfConvergence(filename):
     plt.show()
 
 
-def createGraphTimeOfConvergencePTStepsChangingN(Ns, filename, K_to_N_factor, param_k_display):
+def createGraphTimeOfConvergencePTStepsChangingN(Ns, filename, K_computation_display, param_k_display):
     with open(f"{filename}.npy", "rb") as f:
         iterations = np.load(f)
     iterations_mean = [x.mean() for x in iterations]
@@ -984,20 +780,27 @@ def createGraphTimeOfConvergencePTStepsChangingN(Ns, filename, K_to_N_factor, pa
     # interpolate_line_y = np.interp(interpolate_line_x, Ns, iterations_mean)
     plt.errorbar(np.array(Ns), np.array(iterations_mean),
                  yerr=np.array(iterations_std_dev), fmt="xb", ecolor="b", capsize=3)
-    display_factor = round(K_to_N_factor * 100)
-    plt.xlabel(
-        f"Size of the graph (N) with planted clique of size K ({display_factor}% of N) and parameter k {param_k_display} (for candidate)")
+    label = f"Size of the graph (N) with planted clique of size K {K_computation_display}"
+    if len(param_k_display) > 0:
+        label += f"and parameter k {param_k_display} (for candidate)"
+    plt.xlabel(label)
     # plt.plot(np.array(interpolate_line_x),
     #          np.array(interpolate_line_y), color="c")
     plt.ylabel("Number of PT steps needed")
     plt.show()
 
 
-def createGraphTimeOfConvergencePseudoTimeChangingN(Ns, filename, filename_time_complexity, K_to_N_factor, param_k_display):
+def createGraphTimeOfConvergencePseudoTimeChangingN(Ns, filename, filename_time_complexity, K_computation_display, param_k_display):
     with open(f"{filename}.npy", "rb") as f:
         iterations = np.load(f)
     with open(f"{filename_time_complexity}.npy", "rb") as f:
         times_complexities = np.load(f)
+    if len(times_complexities) != len(Ns):
+        new_times_complexities = []
+        for i in range(len(Ns)):
+            new_times_complexities.append(times_complexities[i])
+        times_complexities = np.array(new_times_complexities)
+
     times_complexities_standardized = [
         times_complexities[i] / Ns[i] for i in range(len(times_complexities))]
     iterations_with_time_complexity_mean = [np.array(
@@ -1008,19 +811,25 @@ def createGraphTimeOfConvergencePseudoTimeChangingN(Ns, filename, filename_time_
     # interpolate_line_y = np.interp(
     #     interpolate_line_x, Ns, iterations_with_time_complexity_mean)
     plt.errorbar(np.array(Ns), np.array(iterations_with_time_complexity_mean),
-                 yerr=np.array(iterations_with_time_complexity_std_dev), fmt="xb", ecolor="b", capsize=3)
+                 fmt="xb", ecolor="b", capsize=3)  # yerr=np.array(iterations_with_time_complexity_std_dev)
     # plt.plot(np.array(interpolate_line_x),
     #          np.array(interpolate_line_y), color="c")
-    display_factor = round(K_to_N_factor * 100)
-    plt.xlabel(
-        f"Size of the graph (N) with planted clique of size K ({display_factor}% of N) and parameter k {param_k_display} (for candidate)")
+    label = f"Size of the graph (N) with planted clique of size K {K_computation_display}"
+    if len(param_k_display) > 0:
+        label += f"and parameter k {param_k_display} (for candidate)"
+    plt.xlabel(label)
     plt.ylabel("'Time': # of PT steps * ((avg # of operations for N) / N)")
     plt.show()
 
 
-def createGraphPseudoTimeOperationsChangingN(Ns, filename_time_complexity, K_to_N_factor, param_k_display):
+def createGraphPseudoTimeOperationsChangingN(Ns, filename_time_complexity, K_computation_display, param_k_display):
     with open(f"{filename_time_complexity}.npy", "rb") as f:
         times_complexities = np.load(f)
+    if len(times_complexities) != len(Ns):
+        new_times_complexities = []
+        for i in range(len(Ns)):
+            new_times_complexities.append(times_complexities[i])
+        times_complexities = np.array(new_times_complexities)
     times_complexities_standardized = [
         times_complexities[i] / Ns[i] for i in range(len(times_complexities))]
     interpolate_line_x = [Ns[0], Ns[-1]]
@@ -1030,19 +839,11 @@ def createGraphPseudoTimeOperationsChangingN(Ns, filename_time_complexity, K_to_
         times_complexities_standardized), fmt="xb", ecolor="b", capsize=3)
     plt.plot(np.array(interpolate_line_x),
              np.array(interpolate_line_y), color="k")
-    display_factor = round(K_to_N_factor * 100)
-    plt.xlabel(
-        f"Size of the graph (N) with planted clique of size K ({display_factor}% of N) and parameter k {param_k_display} (for candidate)")
+    label = f"Size of the graph (N) with planted clique of size K {K_computation_display}"
+    if len(param_k_display) > 0:
+        label += f"and parameter k {param_k_display} (for candidate)"
+    plt.xlabel(label)
     plt.ylabel("(Avg # of operations for N per PT step) / N")
-    plt.show()
-
-
-def createGraphTimeComplexity(filename):
-    with open(f"{filename}.npy", "rb") as f:
-        times_compl = np.load(f)
-    Ns = [200, 500, 1000, 2000, 3000, 4000, 5000, 10000]
-    plt.plot(np.array(Ns), times_compl)
-    # plt.yscale("log")
     plt.show()
 
 
@@ -1058,7 +859,7 @@ if __name__ == '__main__':
 
     # ===============================
     # To sample the convergence of PT with the values of the paper (changing K) uncomment this section
-    timeOfConvergenceChangingK(N_param=2000, n_samples=5)
+    # timeOfConvergenceChangingK(N_param=1000, n_samples=5)
     # ===============================
 
     # ===============================
@@ -1068,19 +869,221 @@ if __name__ == '__main__':
     # Ns = [200, 500, 1000, 2000, 3000, 4000, 5000]  # the N's to be sampled
     # # size of the clique K will be floor(N * K_to_N_factor)
     # K_to_N_factor = 0.125
+    # K_tilde = 6
     # n_samples = 5  # number of graph realizations per N
-    # timeOfConvergenceChangingN(Ns, K_to_N_factor, n_samples)
+    # timeOfConvergenceChangingN(Ns, n_samples, K_to_N_factor, K_tilde)
     # ===============================
 
     # ===============================
-    # Create graphs from data
-    # filename = f"final_results_time_of_convergence_changing_N_from_{Ns[0]}_to_{Ns[-1]}_2022-05-05T20-35-00"
-    # filename_times = f"time_complexity_from_{Ns[0]}_to_{Ns[-1]}_Kfactor_0_125"
+    # Create plots from data
+    # Ns = [200, 500, 1000, 2000, 3000, 4000,
+    #       5000]  # the N's to be sampled
+    # filename = f"final_results_time_of_convergence_changing_N_from_{Ns[0]}_to_{Ns[-1]}_2022-05-06T22-38-06"
+    # filename_times = f"time_complexity_from_200_to_20000_Kfactor_0_125"
     # createGraphPseudoTimeOperationsChangingN(
-    #     Ns, filename_times, 0.125, "min(60, floor(0.5 * K))")
+    #     Ns, filename_times, "(6 * log_2(N))", "")
     # createGraphTimeOfConvergencePTStepsChangingN(
-    #     Ns, filename, 0.125, "min(60, floor(0.5 * K))")
+    #     Ns, filename, "(6 * log_2(N))", "")
     # createGraphTimeOfConvergencePseudoTimeChangingN(
-    #     Ns, filename, filename_times, 0.125, "min(60, floor(0.5 * K))")
+    #     Ns, filename, filename_times, "(6 * log_2(N))", "")
     # ===============================
     pass
+
+
+"""
+Old functions
+
+def drawCandidate(x, N, method="switch_1", p=0.5, k=1):
+    # methods:
+    #    switch_1: switch 1 element of x with probability p
+    #    switch_k: switch k element of x independently with probability p
+    # Old method that did not take into account the fact that the inserted elements have to be linked to the other elements of the current clique
+    
+    x_candidate = np.copy(x)
+    if method in ["switch_1", "switch_k"]:
+        if method == "switch_1":
+            k = 1
+        choice = np.random.choice(N, k, replace=True)
+        for i in choice:
+            p_switch = np.random.uniform()
+            if p_switch < p:
+                x_candidate[i] = 1 - x_candidate[i]
+        return x_candidate
+    return x_candidate
+
+
+def drawCandidateWithCliqueCheck(x, N, A, method="switch_1", p=0.5, k=1):
+    # methods:
+    #    switch_1: switch 1 element of x with probability p
+    #    switch_k: switch k element of x independently with probability p
+    # Ensure that all inserted elements are linked to the other elements of the current clique
+    # return a candidate (np array with entries 0 or 1)
+    # (Computation really slow use one of the drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes methods instead)
+    
+    x_candidate = np.copy(x)
+    if method in ["switch_1", "switch_k"]:
+        if method == "switch_1":
+            k = 1
+        if N < k:
+            k = N
+        choice = np.random.choice(N, k, replace=False)
+        for i in choice:
+            p_switch = np.random.uniform()
+            if p_switch < p:
+                if x_candidate[i] == 1:
+                    x_candidate[i] = 0
+                else:
+                    if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
+                        x_candidate[i] = 1
+        return x_candidate
+    return x_candidate
+
+
+def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_1(x, N, K, A, method="switch_1", p=0.5, k=1, param_remove=0.5):
+    # methods:
+    #    switch_1: switch 1 element of x with probability p
+    #    switch_k: switch k element of x independently with probability p
+    # Ensure that all inserted elements are linked to the other elements of the current clique
+    # Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
+    # return a candidate (np array with entries 0 or 1)
+    # First implementation (not the fastest)
+    
+    x_candidate = np.copy(x)
+    if method in ["switch_1", "switch_k"]:
+        if method == "switch_1":
+            k = 1
+            if N < k:
+                k = N
+            choice = np.random.choice(N, k, replace=False)
+            for i in choice:
+                p_switch = np.random.uniform()
+                if p_switch < p:
+                    if x_candidate[i] == 1:
+                        x_candidate[i] = 0
+                    else:
+                        if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
+                            x_candidate[i] = 1
+            return x_candidate
+        else:
+            if N < k:
+                k = N
+            clique_indices1 = [i for i in range(N) if x_candidate[i] == 1]
+            k_remove = max(
+                1, floor(len(clique_indices1) * param_remove))
+            k_add = k - k_remove
+            if len(clique_indices1) == 0:
+                k_add = k
+            else:
+                if k_remove > len(clique_indices1):
+                    k_remove = len(clique_indices1)
+                    k_add = k - k_remove
+                choice_remove = np.random.choice(
+                    clique_indices1, k_remove, replace=False)
+                for i in choice_remove:
+                    p_switch = np.random.uniform()
+                    if p_switch < p:
+                        x_candidate[i] = 0
+            common_neighbors = []
+            clique_indices2 = [i for i in range(N) if x_candidate[i] == 1]
+            common_vector = np.dot(A, x_candidate)
+            clique_indices2_len = len(clique_indices2)
+            for i in range(N):
+                if common_vector[i] == clique_indices2_len:
+                    common_neighbors.append(i)
+            if k_add > len(common_neighbors):
+                k_add = len(common_neighbors)
+            choice_add = np.random.choice(
+                common_neighbors, k_add, replace=False)
+            added = []
+            for i in choice_add:
+                p_switch = np.random.uniform()
+                if p_switch < p:
+                    if len([j for j in added if A[i, j] != 1]) == 0:
+                        x_candidate[i] = 1
+                        added.append(i)
+            return x_candidate
+    return x_candidate
+
+
+def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_2(x, N, K, A, method="switch_1", p=0.5, k=1, param_remove=0.5):
+    # methods:
+    #    switch_1: switch 1 element of x with probability p
+    #    switch_k: switch k element of x independently with probability p
+    # Ensure that all inserted elements are linked to the other elements of the current clique
+    # Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
+    # return a candidate (np array with entries 0 or 1)
+    # Second implementation (not the fastest)
+    
+    x_candidate = np.copy(x)
+    if method in ["switch_1", "switch_k"]:
+        if method == "switch_1":
+            k = 1
+            if N < k:
+                k = N
+            choice = np.random.choice(N, k, replace=False)
+            for i in choice:
+                p_switch = np.random.uniform()
+                if p_switch < p:
+                    if x_candidate[i] == 1:
+                        x_candidate[i] = 0
+                    else:
+                        if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
+                            x_candidate[i] = 1
+            return x_candidate
+        else:
+            if N < k:
+                k = N
+            clique_indices1 = [i for i in range(N) if x_candidate[i] == 1]
+            k_remove = max(
+                1, floor(len(clique_indices1) * param_remove))
+            k_add = k - k_remove
+            if len(clique_indices1) == 0:
+                k_add = floor(K * 0.5)
+            else:
+                if k_remove > len(clique_indices1):
+                    k_remove = len(clique_indices1)
+                    k_add = k - k_remove
+                choice_remove = np.random.choice(
+                    clique_indices1, k_remove, replace=False)
+                for i in choice_remove:
+                    p_switch = np.random.uniform()
+                    if p_switch < p:
+                        x_candidate[i] = 0
+            not_clique_indices2 = [i for i in range(N) if x_candidate[i] == 0]
+            clique_indices2 = [i for i in range(N) if x_candidate[i] == 1]
+            if k_add > len(not_clique_indices2):
+                k_add = len(not_clique_indices2)
+            choice_add = np.random.choice(
+                not_clique_indices2, k_add, replace=False)
+            n_rejected = 0
+            for i in choice_add:
+                p_switch = np.random.uniform()
+                if p_switch < p:
+                    linked = True
+                    for j in clique_indices2:
+                        if A[i, j] != 1:
+                            linked = False
+                            break
+                    if linked:
+                        x_candidate[i] = 1
+                        clique_indices2.append(i)
+                    else:
+                        n_rejected += 1
+            if n_rejected >= 0.5 * k_add:
+                not_clique_indices2 = [
+                    i for i in range(N) if x_candidate[i] == 0]
+                choice_add = np.random.choice(
+                    not_clique_indices2, n_rejected, replace=False)
+                for i in choice_add:
+                    linked = True
+                    for j in clique_indices2:
+                        if A[i, j] != 1:
+                            linked = False
+                            break
+                    if linked:
+                        x_candidate[i] = 1
+                        clique_indices2.append(i)
+            return x_candidate
+    return x_candidate
+
+"""
