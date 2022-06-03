@@ -1577,7 +1577,7 @@ if __name__ == '__main__':
 
     # ===============================
     # To sample the convergence of PT with the values of the paper (changing K) uncomment this section
-    timeOfConvergenceChangingK(n_samples=5)
+    timeOfConvergenceChangingK(n_samples=5, send_result_email=True)
     # print("Sample small add full, betas 0.15, nodes prob.")
     # timeOfConvergenceChangingKSmallN(n_samples=6)
     # timeOfConvergenceChangingKReallySmallN(5)
