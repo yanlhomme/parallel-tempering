@@ -1449,12 +1449,13 @@ if __name__ == '__main__':
     # print("Sampling only rest threshold 0.66")
     # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
 
+    # ada-14
     Ns = [700, 800, 900, 1000, 2000, 3000, 4000]
-    K_tildes = [[floor(N/np.e) / np.log2(N)] for N in Ns]
+    K_tildes = [[floor(np.sqrt(N/np.e)) / np.log2(N)] for N in Ns]
     n_samples = 4
     print("700 to 4000, 4 samples, at K_BP, threshold: 0.58")
     timeOfConvergenceChangingK(
-        Ns, K_tildes, n_samples=n_samples, send_result_email=True)
+        Ns, K_tildes, n_samples=n_samples, send_result_email=False)
 
     # ===============================
 
