@@ -567,7 +567,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
     while control < limit and size_estimate_clique < K:
         # perform Metropolis on all replicas
         draw_method = "switch_all"
-        if control % 2 == 0 and float(size_estimate_clique) / K > 0.66:
+        if control % 2 == 0 and float(size_estimate_clique) / K > 0.58:
             draw_method = "switch_k"
         estimates, energies, new_monitoring_metropolis, step_avg_time_complexity = performMetropolisOnAllReplicas(
             estimates, betas, A, N, K, n_steps, log_K_over_N, log_1_minus_K_over_N, N_count_constant, A_neighbors=A_neighbors, with_threading=with_threading, nodes_probabilities=nodes_probabilities, draw_method=draw_method)
@@ -924,6 +924,7 @@ def timeOfConvergenceChangingK(Ns, K_tildes, n_samples=1, accept_other_clique=Fa
 
 # Plots
 
+
 PLOTS_COLORS = ["darkblue", "blue", "dodgerblue",
                 "royalblue", "steelblue", "skyblue", "lightblue"]
 
@@ -1056,31 +1057,32 @@ def createPlotFoundNodesEvolutionPerBeta_N100_K24():
     plt.show()
 
 
-def createPlotTimeOfConvergence_N700_to_N4000_K_BP(log_y=False):
+def createPlotTimeOfConvergence_N700_to_N3000_K_BP(log_y=False):
     index_color = 2
     n_samples = 8
-    # Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000, 4000]
     Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000]
-    N_700 = [5780, 31207, 9300, 7340, 11401, 1532, 1633, 7760]
-    N_800 = [48175, 10850, 32620, 169, 18369, 9017, 14512, 4578]
-    N_900 = [9382, 7778, 8013, 7004, 3483, 3217, 10978, 5537]
-    N_1000 = [13054, 3719, 2313, 34678, 5247, 37531, 27964, 1423]
-    N_2000 = [77429, 32938, 25089, 258160, 125528, 103862, 10709, 20733]
-    N_3000 = [35451, 117622, 25345, 88763, 30099, 369286, 38701, 196546]
-    results = np.array([N_700, N_800, N_900, N_1000, N_2000, N_3000])
-    results_mean = results.mean(axis=1)
-    results_std_dev = results.std(axis=1)
-    # filename = f"results_K_BP"
-    # for N in Ns_K_BPs:
-    #     filename += f"_{N}"
-    # with open(f"{filename}.npy", "rb") as f:
-    #     results = np.load(f)
-    #     results_mean = results.mean(axis=1)
-    #     results_std_dev = results.std(axis=1)
+    N_700_K_16 = [1817, 6621, 2221, 13483, 8413, 5235, 36295, 3561]
+    N_800_K_17 = [6695, 541, 299, 5087, 15555, 1003, 5441, 975]
+    N_900_K_18 = [7623, 5843, 1789, 3083, 3103, 1273, 5683, 1975]
+    N_1000_K_19 = [2635, 13111, 7931, 7031, 13515, 26049, 7379, 33679]
+    N_2000_K_27 = [10699, 78087, 7345, 36023, 28527, 8743, 134253, 39411]
+    N_3000_K_33 = [79673, 75225, 63127]
+    results = np.array(
+        [N_700_K_16, N_800_K_17, N_900_K_18, N_1000_K_19, N_2000_K_27])
+    results_mean = np.array(
+        [*list(results.mean(axis=1)), np.array(N_3000_K_33).mean()])
+    results_std_dev = np.array(
+        [*list(results.std(axis=1)), np.array(N_3000_K_33).std()])
+
+    A = np.vstack([np.array(Ns_K_BPs), np.ones(len(Ns_K_BPs))]).T
+    m, c = np.linalg.lstsq(A, results_mean, rcond=None)[0]
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
                                                       yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
     caplines1[0].set_marker("_")
+    interp_x = np.array([Ns_K_BPs[0] - 100, *Ns_K_BPs, Ns_K_BPs[-1] + 100])
+    plt.plot(interp_x, m * np.array(interp_x) +
+             c, color=PLOTS_COLORS[-1])
     if log_y:
         plt.yscale("log")
     label = f"N (each point is over {n_samples} samples)"
@@ -1088,6 +1090,41 @@ def createPlotTimeOfConvergence_N700_to_N4000_K_BP(log_y=False):
     plt.ylabel("Number of PT steps needed")
     plt.legend([plotline1], [
                "Start of hard phase (K_BP = floor(sqrt(N/e)))"])
+    plt.show()
+
+
+def createPlotTimeOfConvergence_N700_to_N2000_K_BPminus1(log_y=False):
+    index_color = 2
+    n_samples = 8
+    Ns_K_BPs = [700, 800, 900, 1000, 2000]
+    N_700_K_15 = [11809, 59827, 55941, 11920, 10235, 15500, 10445, 2237]
+    N_800_K_16 = [11395, 653, 3677, 25073, 23239, 24289, 4380, 490]
+    N_900_K_17 = [6659, 3261, 18815, 8847, 9049, 1871, 14863, 9993]
+    N_1000_K_18 = [7397, 12455, 1333, 2801, 3749, 44313, 1805, 1793]
+    N_2000_K_26 = [87447, 17005, 45527, 12555, 51627, 293851, 112189]
+    results = np.array(
+        [N_700_K_15, N_800_K_16, N_900_K_17, N_1000_K_18])
+    results_mean = np.array(
+        [*list(results.mean(axis=1)), np.array(N_2000_K_26).mean()])
+    results_std_dev = np.array(
+        [*list(results.std(axis=1)), np.array(N_2000_K_26).std()])
+
+    A = np.vstack([np.array(Ns_K_BPs), np.ones(len(Ns_K_BPs))]).T
+    m, c = np.linalg.lstsq(A, results_mean, rcond=None)[0]
+
+    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
+                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
+    caplines1[0].set_marker("_")
+    interp_x = np.array([Ns_K_BPs[0] - 100, *Ns_K_BPs, Ns_K_BPs[-1] + 100])
+    plt.plot(interp_x, m * np.array(interp_x) +
+             c, color=PLOTS_COLORS[-1])
+    if log_y:
+        plt.yscale("log")
+    label = f"N (each point is over {n_samples} samples)"
+    plt.xlabel(label)
+    plt.ylabel("Number of PT steps needed")
+    plt.legend([plotline1], [
+               "Hard phase (K_BP - 1 = floor(sqrt(N/e))) - 1"])
     plt.show()
 
 
@@ -1135,6 +1172,131 @@ def createPlotTimeOfConvergence_N700_to_N4000_KsaroundHard(log_y=False):
     plt.show()
 
 
+def createPlotTimeOfConvergenceChangingK():
+    n_samples = 8
+
+    N_700_K_15 = [11809, 59827, 55941, 11920, 10235, 15500, 10445, 2237]
+    N_700_K_16 = [1817, 6621, 2221, 13483, 8413, 5235, 36295, 3561]
+    N_700_K_17 = [6925, 2797, 4968, 15381, 19810, 4542, 6408, 15007]
+    N_700_K_18 = [5067, 473, 3716, 9975, 7245, 10883, 111, 289]
+
+    N_800_K_15 = [13461, 11293, 5471, 8675, 16985, 5593, 20468, 8632]
+    N_800_K_16 = [11395, 653, 3677, 25073, 23239, 24289, 4380, 490]
+    N_800_K_17 = [6695, 541, 299, 5087, 15555, 1003, 5441, 975]
+
+    N_900_K_16 = [47600, 26943, 96071, 57141, 120170, 26031, 1155, 23086]
+    N_900_K_17 = [6659, 3261, 18815, 8847, 9049, 1871, 14863, 9993]
+    N_900_K_18 = [7623, 5843, 1789, 3083, 3103, 1273, 5683, 1975]
+
+    N_1000_K_17 = [42649, 36621, 17643, 5991, 171615, 64213, 35629, 1635]
+    N_1000_K_18 = [7397, 12455, 1333, 2801, 3749, 44313, 1805, 1793]
+    N_1000_K_19 = [2635, 13111, 7931, 7031, 13515, 26049, 7379, 33679]
+    N_1000_K_20 = [2837, 5133, 6717, 3385, 23493, 9401, 20775, 18742]
+    N_1000_K_21 = [7633, 1875, 1075, 67, 617, 2237, 4455, 445]
+
+    K_tildes_N700 = [round(K / np.log2(700), 2) for K in [15, 16, 17, 18]]
+    K_tildes_N800 = [round(K / np.log2(800), 2) for K in [15, 16, 17]]
+    K_tildes_N900 = [round(K / np.log2(900), 2) for K in [16, 17, 18]]
+    K_tildes_N1000 = [round(K / np.log2(1000), 2)
+                      for K in [17, 18, 19, 20, 21]]
+
+    N_700 = np.array([N_700_K_15, N_700_K_16, N_700_K_17, N_700_K_18])
+    N_800 = np.array([N_800_K_15, N_800_K_16, N_800_K_17])
+    N_900 = np.array([N_900_K_16, N_900_K_17, N_900_K_18])
+    N_1000 = np.array(
+        [N_1000_K_17, N_1000_K_18, N_1000_K_19, N_1000_K_20, N_1000_K_21])
+
+    means_700 = N_700.mean(axis=1)
+    means_800 = N_800.mean(axis=1)
+    means_900 = N_900.mean(axis=1)
+    means_1000 = N_1000.mean(axis=1)
+
+    std_700 = N_700.std(axis=1)
+    std_800 = N_800.std(axis=1)
+    std_900 = N_900.std(axis=1)
+    std_1000 = N_1000.std(axis=1)
+
+    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(K_tildes_N700), means_700,
+                                                      yerr=std_700, fmt=f"x", color=PLOTS_COLORS[0], ecolor=PLOTS_COLORS[0], capsize=3, lolims=False, ls="-")
+    caplines1[0].set_marker("_")
+    plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(K_tildes_N800), means_800,
+                                                      yerr=std_800, fmt=f"x", color=PLOTS_COLORS[2], ecolor=PLOTS_COLORS[2], capsize=3, lolims=False, ls="-")
+    caplines2[0].set_marker("_")
+    plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(K_tildes_N900), means_900,
+                                                      yerr=std_900, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3, lolims=False, ls="-")
+    caplines3[0].set_marker("_")
+    plotline4, caplines4, barlinecols4 = plt.errorbar(np.array(K_tildes_N1000), means_1000,
+                                                      yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=False, ls="-")
+    caplines4[0].set_marker("_")
+    # plt.yscale("log")
+    label = f"K_tilde (each point is over {n_samples} samples)"
+    plt.xlabel(label)
+    plt.ylabel("Number of PT steps needed")
+    plt.legend([plotline1, plotline2, plotline3, plotline4], [
+               "N = 700", "N = 800", "N = 900", "N = 1000"])
+    plt.show()
+
+
+def parseLogFile(log_filename, file_out, file_out_list):
+    count = 0
+    current = ""
+    if len(file_out_list) > 0:
+        with open(file_out_list, "w") as f_out:
+            with open(log_filename, "r") as f:
+                lines = f.readlines()
+                for l in lines:
+                    if len(current) > 0:
+                        if "WARNING" not in l:
+                            count += 1
+                            if count < 8:
+                                f_out.write(f"{current}, ")
+                            else:
+                                f_out.write(f"{current}")
+                        current = ""
+                    elif "N " in l:
+                        count = 0
+                        val = l.replace(" ", "_").replace("\n", "_")
+                        f_out.write(f"]\n{val}")
+                    elif "K " in l and "True" not in l:
+                        val = l.replace(" ", "_").replace("\n", " = ")
+                        f_out.write(f"{val}[")
+                    elif "#" in l:
+                        steps = l[l.index("#") + 1:]
+                        steps = steps[:steps.index(",")]
+                        current = steps
+    count = 0
+    current = ""
+    if len(file_out) > 0:
+        with open(file_out, "w") as f_out:
+            with open(log_filename, "r") as f:
+                lines = f.readlines()
+                for l in lines:
+                    if len(current) > 0:
+                        if "WARNING" not in l:
+                            count += 1
+                            if count < 8:
+                                f_out.write(f"{current}, ")
+                            else:
+                                f_out.write(f"{current}")
+                        current = ""
+                    elif "N " in l:
+                        count = 0
+                        f_out.write(f"]\n{l}")
+                    elif "K " in l and "True" not in l:
+                        f_out.write(f"{l}[")
+                    elif "#" in l:
+                        steps = l[l.index("#") + 1:]
+                        steps = steps[:steps.index(",")]
+                        current = steps
+    if len(file_out) > 0:
+        if len(file_out_list) > 0:
+            print("Files", file_out, file_out_list, "created")
+        else:
+            print("File", file_out, "created")
+    elif len(file_out_list) > 0:
+        print("File", file_out_list, "created")
+
+
 if __name__ == '__main__':
     # ===============================
     # To test the clique recovery with PT uncomment this section and change the values of K_tilde_test (or K_test), N_test according to your needs
@@ -1169,8 +1331,10 @@ if __name__ == '__main__':
     # createPlotTimeOfConvergenceChangingK_N700_to_N1000(subplots=True, with_line=False, log_y=False)
     # createPlotTimeOfConvergence_N100_to_N4000_K_BP(interpolate_line=False, log_y=False)
     # createPlotFoundNodesEvolutionPerBeta_N100_K24()
-    # createPlotTimeOfConvergence_N700_to_N4000_K_BP(log_y=False)
+    # createPlotTimeOfConvergence_N700_to_N3000_K_BP(log_y=False)
+    # createPlotTimeOfConvergence_N700_to_N2000_K_BPminus1(log_y=False)
     # createPlotTimeOfConvergence_N700_to_N4000_KsaroundHard(log_y=False)
+    # createPlotTimeOfConvergenceChangingK()
     # ===============================
 
     # ===============================
@@ -1202,7 +1366,7 @@ if __name__ == '__main__':
     # Hard phase
     # Ns = [700, 1000, 2000, 3000, 4000]
     # K_tildes = [[float(floor(np.sqrt(N/np.e)) - i) / np.log2(N)
-    #              for i in range(1, 3 if N != 700 else 2)] for N in Ns]
+    #              for i in range(3 if N != 700 else 2)] for N in Ns]
     # n_samples = 8  # number of graph realizations per N
     # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
 
@@ -1250,14 +1414,48 @@ if __name__ == '__main__':
     # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
 
     # Hard phase paper's results completion
-    Ns = [2000, 3000, 4000]
-    K_tildes = [[22, 20, 18], [28, 26, 24, 22, 20], [33, 31, 29, 27, 25, 23]]
-    for i in range(len(K_tildes)):
-        for j in range(len(K_tildes[i])):
-            K_tildes[i][j] = float(K_tildes[i][j]) / np.log2(Ns[i])
-    n_samples = 8  # number of graph realizations per N
+    # Ns = [2000, 3000, 4000]
+    # K_tildes = [[22, 20, 18], [28, 26, 24, 22, 20], [33, 31, 29, 27, 25, 23]]
+    # for i in range(len(K_tildes)):
+    #     for j in range(len(K_tildes[i])):
+    #         K_tildes[i][j] = float(K_tildes[i][j]) / np.log2(Ns[i])
+    # n_samples = 8  # number of graph realizations per N
+    # timeOfConvergenceChangingK(
+    #     Ns, K_tildes, n_samples=n_samples)
+
+    # Hard phase complete
+    # Ns = [3000]
+    # K_tildes = []
+    # K_tildes.append([floor(np.sqrt(3000/np.e)), floor(np.sqrt(3000/np.e)) - 1, floor(
+    #     np.sqrt(3000/np.e)) - 2, floor(np.sqrt(3000/np.e)) + 1, floor(np.sqrt(3000/np.e)) + 2])
+    # for i in range(len(K_tildes)):
+    #     for j in range(len(K_tildes[i])):
+    #         K_tildes[i][j] = float(K_tildes[i][j]) / np.log2(Ns[i])
+    # n_samples = 8  # number of graph realizations per N
+    # print("Sampling only 3000 threshold 0.66")
+    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
+
+    # Ns = [800, 900, 1000]
+    # K_tildes = []
+    # K_tildes.append([floor(np.sqrt(800/np.e)) - 1,
+    #                 floor(np.sqrt(800/np.e)) - 2])
+    # K_tildes.append([floor(np.sqrt(900/np.e)) - 1,
+    #                 floor(np.sqrt(900/np.e)) - 2])
+    # K_tildes.append([floor(np.sqrt(1000/np.e)) - 3])
+    # for i in range(len(K_tildes)):
+    #     for j in range(len(K_tildes[i])):
+    #         K_tildes[i][j] = float(K_tildes[i][j]) / np.log2(Ns[i])
+    # n_samples = 8  # number of graph realizations per N
+    # print("Sampling only rest threshold 0.66")
+    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
+
+    Ns = [700, 800, 900, 1000, 2000, 3000, 4000]
+    K_tildes = [[floor(N/np.e) / np.log2(N)] for N in Ns]
+    n_samples = 4
+    print("700 to 4000, 4 samples, at K_BP, threshold: 0.58")
     timeOfConvergenceChangingK(
         Ns, K_tildes, n_samples=n_samples, send_result_email=True)
+
     # ===============================
 
     # x = np.linspace(Ns[0], Ns[-1], Ns[-1] - Ns[0])
@@ -1268,6 +1466,8 @@ if __name__ == '__main__':
     # plt.plot(x, y_log2, color="r")
     # plt.plot(x, y_log16, color="orange")
     # plt.show()
+
+    # print([floor(np.sqrt(N/np.e)) for N in [700, 800, 900, 1000, 2000, 3000]])
 
     # ssh access: ssh pytharski -l lhommey
     pass
@@ -1309,6 +1509,40 @@ K_tildes_N5000 = [2.19, 2.36, 2.52, 2.68,
 
 """
 Old functions
+
+def createPlotTimeOfConvergence_N700_to_N4000_K_BP(log_y=False):
+    index_color = 2
+    n_samples = 8
+    # Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000, 4000]
+    Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000]
+    N_700 = [5780, 31207, 9300, 7340, 11401, 1532, 1633, 7760]
+    N_800 = [48175, 10850, 32620, 169, 18369, 9017, 14512, 4578]
+    N_900 = [9382, 7778, 8013, 7004, 3483, 3217, 10978, 5537]
+    N_1000 = [13054, 3719, 2313, 34678, 5247, 37531, 27964, 1423]
+    N_2000 = [77429, 32938, 25089, 258160, 125528, 103862, 10709, 20733]
+    N_3000 = [35451, 117622, 25345, 88763, 30099, 369286, 38701, 196546]
+    results = np.array([N_700, N_800, N_900, N_1000, N_2000, N_3000])
+    results_mean = results.mean(axis=1)
+    results_std_dev = results.std(axis=1)
+    # filename = f"results_K_BP"
+    # for N in Ns_K_BPs:
+    #     filename += f"_{N}"
+    # with open(f"{filename}.npy", "rb") as f:
+    #     results = np.load(f)
+    #     results_mean = results.mean(axis=1)
+    #     results_std_dev = results.std(axis=1)
+
+    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
+                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
+    caplines1[0].set_marker("_")
+    if log_y:
+        plt.yscale("log")
+    label = f"N (each point is over {n_samples} samples)"
+    plt.xlabel(label)
+    plt.ylabel("Number of PT steps needed")
+    plt.legend([plotline1], [
+               "Start of hard phase (K_BP = floor(sqrt(N/e)))"])
+    plt.show()
 
 def drawCandidate(x, N, method="switch_1", p=0.5, k=1):
     # methods:
