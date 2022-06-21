@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.polynomial import Polynomial
 import networkx as nx
+from scipy.optimize import curve_fit
 
 LOG_1_HALF = np.log(0.5)
 
@@ -92,6 +93,7 @@ def drawCandidate(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove
     N, K, A: graphs variables
     methods:
         switch_standard: "standard" procedure
+        switch_all: switch each element with probability 1/2 (and if the resulting estimate forms a clique)
         switch_k: switch k element of x: k_remove = (param_remove * min(k, size of current clique)) elements are removed with probability p, (size of current clique - k_remove + 1) from the common neighbors of the current clique x are added if they form a clique up to a limit
         switch_k_add: same as switch_k but add (k - k_remove) elements with probability (p + 0.25 * beta) of it forms a clique
     p: (only for switch_k method) the probability of switch acceptance
@@ -133,22 +135,6 @@ def drawCandidate(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove
             return x_candidate, time_complexity
         elif method == "switch_all":
             estimate_indices = [i for i in range(N) if x_candidate[i] == 1]
-            # for i in range(N):
-            #     p_switch = np.random.uniform()
-            #     if p_switch < 0.5:
-            #         if x_candidate[i] == 1:
-            #             x_candidate[i] = 0
-            #             estimate_indices.remove(i)
-            #         else:
-            #             make_a_clique = True
-            #             for j in estimate_indices:
-            #                 if A[i, j] != 1:
-            #                     make_a_clique = False
-            #                     break
-            #             # if len([j for j in estimate_indices if A[i, j] != 1]) == 0:
-            #             if make_a_clique:
-            #                 x_candidate[i] = 1
-            #                 estimate_indices.append(i)
             number_accepted = np.random.binomial(N, 0.5)
             switch_accepted = np.random.choice(
                 N, number_accepted, replace=False)
@@ -162,7 +148,6 @@ def drawCandidate(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove
                         if A[i, j] != 1:
                             make_a_clique = False
                             break
-                    # if len([j for j in estimate_indices if A[i, j] != 1]) == 0:
                     if make_a_clique:
                         x_candidate[i] = 1
                         estimate_indices.append(i)
@@ -281,6 +266,60 @@ def drawCandidate(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove
                             x_candidate[i] = 1
                             added.append(i)
             return x_candidate, time_complexity
+    return x_candidate, time_complexity
+
+
+def drawCandidatePaper(x, N, K, A, method="switch_all", p=0.5, k=1, param_remove=0.5, beta=-1.0, A_neighbors=None, nodes_probabilities=[]):
+    """
+    Ensure that all inserted elements are linked to the other elements of the current clique
+    Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
+
+    Parameters
+    x: current estimate
+    N, K, A: graphs variables
+    methods:
+        switch_all: switch each element with probability min(1, exp(beta * (log(1-K/N) - log(K/N) + (size of the previous estimated clique)*log(1/2)))) for elements of the previous estimate, probability min(1, exp(-beta * (log(1-K/N) - log(K/N) + (size of the previous estimated clique)*log(1/2)))) for non-elements of the previous estimate (and if the resulting estimate forms a clique)
+    beta: inverse temperature
+    Not used parameters:
+    p: (only for switch_k method) the probability of switch acceptance
+    k: (only for switch_k method) the minimum number of elements considered to be switched
+    param_remove: (only for switch_k method) the proportion of elements that will be tried to be removed from the current clique
+    A_neighbors: list of list of neighbors for each node of the graph
+    nodes_probabilities: list of probabilities for each node (number of neighbors / (2 * total number of edges))
+
+    Return
+    return a candidate (np array with entries 0 or 1), and an integer representing the order of the number of operations needed to compute the common neighbors of the current clique (0 if method is switch_standard)
+    """
+    x_candidate = np.copy(x)
+    time_complexity = 0
+    if method == "switch_all":
+        estimate_indices = [i for i in range(N) if x_candidate[i] == 1]
+        m = len(estimate_indices)
+        p_accept = min(1, np.exp(-beta * (np.log(1 - float(K) / N) -
+                                          np.log(float(K) / N) + m * LOG_1_HALF)))
+        p_remove_accept = min(1, np.exp(beta * (np.log(1 - float(K) / N) -
+                                                np.log(float(K) / N) + m * LOG_1_HALF)))
+        number_accepted = np.random.binomial(
+            N - len(estimate_indices), p_accept)
+        switch_accepted = np.random.choice(
+            [i for i in range(N) if i not in estimate_indices], number_accepted, replace=False)
+        number_remove_accepted = np.random.binomial(
+            len(estimate_indices), p_remove_accept)
+        switch_remove_accepted = np.random.choice(
+            estimate_indices, number_remove_accepted, replace=False)
+        for i in switch_remove_accepted:
+            x_candidate[i] = 0
+            estimate_indices.remove(i)
+        for i in switch_accepted:
+            make_a_clique = True
+            for j in estimate_indices:
+                if A[i, j] != 1:
+                    make_a_clique = False
+                    break
+            # if len([j for j in estimate_indices if A[i, j] != 1]) == 0:
+            if make_a_clique:
+                x_candidate[i] = 1
+                estimate_indices.append(i)
     return x_candidate, time_complexity
 
 
@@ -567,7 +606,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
     while control < limit and size_estimate_clique < K:
         # perform Metropolis on all replicas
         draw_method = "switch_all"
-        if control % 2 == 0 and float(size_estimate_clique) / K > 0.58:
+        if control % 2 == 0:
             draw_method = "switch_k"
         estimates, energies, new_monitoring_metropolis, step_avg_time_complexity = performMetropolisOnAllReplicas(
             estimates, betas, A, N, K, n_steps, log_K_over_N, log_1_minus_K_over_N, N_count_constant, A_neighbors=A_neighbors, with_threading=with_threading, nodes_probabilities=nodes_probabilities, draw_method=draw_method)
@@ -929,372 +968,458 @@ PLOTS_COLORS = ["darkblue", "blue", "dodgerblue",
                 "royalblue", "steelblue", "skyblue", "lightblue"]
 
 
-def createPlotTimeOfConvergenceChangingK_N700_to_N1000(subplots=True, with_line=False, log_y=False):
-    filename = f"results_time_of_convergence_finished_small_14_samples_with_easy"
-    Ns = [700, 800, 900, 1000]
-    K_tildes_N700 = [2.09, 1.89, 1.69, 1.59]
-    K_tildes_N800 = [2.06, 1.86, 1.76, 1.66, 1.56]
-    K_tildes_N900 = [2.13, 1.93, 1.83, 1.73, 1.63]
-    K_tildes_N1000 = [2.21, 2.01, 1.91, 1.81, 1.71, 1.6]
-    K_tildes = [K_tildes_N700, K_tildes_N800, K_tildes_N900, K_tildes_N1000]
-    colors = [x for i, x in enumerate(PLOTS_COLORS) if i % 2 == 0]
-    if subplots:
-        figure, axis = plt.subplots(2, ceil(len(Ns) * 0.5))
-        label = f"Size of the planted clique K tilde"
-        with open(f"{filename}.npy", "rb") as f:
-            for i, N in enumerate(Ns):
-                iterations = np.load(f)
-                iterations_mean = iterations.mean(axis=1)
-                iterations_std_dev = iterations.std(axis=1)
-                row = 0
-                col = i
-                if i >= ceil(len(Ns) * 0.5):
-                    row = 1
-                    col = i - ceil(len(Ns) * 0.5)
-                if with_line:
-                    axis[row, col].errorbar(np.array(K_tildes[i]), np.array(iterations_mean),
-                                            yerr=np.array(iterations_std_dev), fmt=f"x", color=colors[i], ecolor=colors[i], capsize=3, ls="-")
-                else:
-                    axis[row, col].errorbar(np.array(K_tildes[i]), np.array(iterations_mean),
-                                            yerr=np.array(iterations_std_dev), fmt=f"x", color=colors[i], ecolor=colors[i], capsize=3)
-                axis[row, col].set(
-                    xlabel=label, ylabel=f"Number of PT steps needed for N={N}")
-    else:
-        lines = []
-        legends = []
-        label = f"Size of the planted clique K tilde"
-        with open(f"{filename}.npy", "rb") as f:
-            for i, N in enumerate(Ns):
-                iterations = np.load(f)
-                iterations_mean = iterations.mean(axis=1)
-                iterations_std_dev = iterations.std(axis=1)
-                if with_line:
-                    line, caplines, barlinecols = plt.errorbar(np.array(K_tildes[i]), np.array(iterations_mean),
-                                                               yerr=np.array(iterations_std_dev), fmt=f"x", color=colors[i], ecolor=colors[i], capsize=3, ls="-")
-                else:
-                    line, caplines, barlinecols = plt.errorbar(np.array(K_tildes[i]), np.array(iterations_mean),
-                                                               yerr=np.array(iterations_std_dev), fmt=f"x", color=colors[i], ecolor=colors[i], capsize=3)
-                lines.append(line)
-                legends.append(f"N={N}")
-        label = f"Size of the planted clique K tilde (N={Ns[0]} to {Ns[-1]})"
-        plt.xlabel(label)
-        plt.ylabel("Number of PT steps needed")
-        plt.legend(lines, legends)
-    if log_y:
-        plt.yscale("log")
-    plt.show()
-
-
-def createPlotTimeOfConvergence_N100_to_N4000_K_BP(interpolate_line=False, log_y=False):
-    n_samples_big = 5
-    n_samples_small = 14
-    filename_big = f"PT_steps_N2000_N3000_N4000_5samples_index_0"
-    filename_small = f"results_time_of_convergence_finished_small_14_samples_with_easy"
-    filename_reallysmall = "results_time_of_convergence_finished__reallysmall_20_samples"
-    Ns_big = [2000, 3000, 4000]
-    Ns_small = [700, 800, 900, 1000]
-    Ns_reallysmall = [100, 200, 300, 400, 500]
-    values_means_1 = []
-    values_std_1 = []
-    with open(f"{filename_reallysmall}.npy", "rb") as f:
-        for i, N in enumerate(Ns_reallysmall):
-            iterations = np.load(f)
-            iterations_mean = iterations.mean(axis=1)
-            iterations_std_dev = iterations.std(axis=1)
-            values_means_1.append(iterations_mean[0])
-            values_std_1.append(iterations_std_dev[0])
-    with open(f"{filename_small}.npy", "rb") as f:
-        for i, N in enumerate(Ns_small):
-            iterations = np.load(f)
-            iterations_mean = iterations.mean(axis=1)
-            iterations_std_dev = iterations.std(axis=1)
-            values_means_1.append(iterations_mean[2])
-            values_std_1.append(iterations_std_dev[2])
-    with open(f"{filename_big}.npy", "rb") as f:
-        for i, N in enumerate(Ns_big):
-            iterations = np.load(f)
-            iterations_mean = iterations.mean(axis=1)
-            iterations_std_dev = iterations.std(axis=1)
-            values_means_1.append(iterations_mean[0])
-            values_std_1.append(iterations_std_dev[0])
-
-    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array([*Ns_reallysmall, *Ns_small, *Ns_big]), np.array(values_means_1),
-                                                      yerr=np.array(values_std_1), fmt=f"xb", ecolor="b", capsize=3, lolims=False)
-    caplines1[0].set_marker("_")
-
-    if interpolate_line:
-        poly_fit = Polynomial.fit(
-            np.array([*Ns_reallysmall, *Ns_small, *Ns_big]), np.array(values_means_1), 4, [0, 20000])
-        poly_fit_x, poly_fit_y = poly_fit.linspace(
-            10000, [Ns_reallysmall[0], Ns_big[-1]])
-        plt.plot(poly_fit_x, poly_fit_y)
-
-    if log_y:
-        plt.yscale("log")
-    label = f"N (each point is over {n_samples_small} ({n_samples_big} for N >= 2000) samples)"
-    plt.xlabel(label)
-    plt.ylabel("Number of PT steps needed")
-    plt.legend([plotline1], [
-               "Start of hard phase (K_BP)"])
-    plt.show()
-
-
-def createPlotFoundNodesEvolutionPerBeta_N100_K24():
-    filename = "correct_evolution_over_steps.npy"
-    figure, axis = plt.subplots(4, 2)
-    with open(filename, "rb") as f:
-        corrects = np.load(f)
-        for i in range(7):
-            row = floor(i / 2)
-            col = i % 2
-            axis[row, col].plot(np.array(
-                [j + 1 for j in range(corrects.shape[1])]), corrects[i, :], ".", color=PLOTS_COLORS[i])
-            axis[row, col].set(
-                xlabel="PT steps", ylabel="Correct nodes")
-            axis[row, col].set_title(
-                f"Number of correct nodes in estimate for beta={round(1.0 - 0.15 * i, 2)}")
-    axis[3, 1].remove()
-    plt.show()
-
-
-def createPlotTimeOfConvergence_N700_to_N3000_K_BP(log_y=False):
+def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False):
     index_color = 2
-    n_samples = 8
-    Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000]
-    N_700_K_16 = [1817, 6621, 2221, 13483, 8413, 5235, 36295, 3561]
-    N_800_K_17 = [6695, 541, 299, 5087, 15555, 1003, 5441, 975]
-    N_900_K_18 = [7623, 5843, 1789, 3083, 3103, 1273, 5683, 1975]
-    N_1000_K_19 = [2635, 13111, 7931, 7031, 13515, 26049, 7379, 33679]
-    N_2000_K_27 = [10699, 78087, 7345, 36023, 28527, 8743, 134253, 39411]
-    N_3000_K_33 = [79673, 75225, 63127]
+    n_samples = 12
+    Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000, 4000, 5000]
+    N_700_K_16_2 = [7241, 5631, 5891, 499]
+    N_700_K_16 = [1817, 6621, 2221, 13483,
+                  8413, 5235, 36295, 3561, *N_700_K_16_2]
+    N_800_K_17_2 = [249, 2545, 2727, 33425]
+    N_800_K_17 = [6695, 541, 299, 5087, 15555, 1003, 5441, 975, *N_800_K_17_2]
+    N_900_K_18_2 = [39473, 15171, 987, 6331]
+    N_900_K_18 = [7623, 5843, 1789, 3083,
+                  3103, 1273, 5683, 1975, *N_900_K_18_2]
+    N_1000_K_19_2 = [18183, 2367, 25327, 9143]
+    N_1000_K_19 = [2635, 13111, 7931, 7031,
+                   13515, 26049, 7379, 33679, *N_1000_K_19_2]
+    N_2000_K_27_2 = [9553, 18907, 4167, 45265]
+    N_2000_K_27 = [10699, 78087, 7345, 36023,
+                   28527, 8743, 134253, 39411, *N_2000_K_27_2]
+    N_3000_K_33_2 = [55451, 329497, 217849, 100373]
+    N_3000_K_33 = [79673, 75225, 63127, 37781,
+                   93621, 6501, 56727, 55451, *N_3000_K_33_2]
+    N_4000_K_38 = [16929, 237699, 44755, 41333, 83531, 82023, 304713, 96773]
+    N_5000_K_42 = [41273, 371025, 162027, 94849, 298315, 39507]
     results = np.array(
-        [N_700_K_16, N_800_K_17, N_900_K_18, N_1000_K_19, N_2000_K_27])
+        [N_700_K_16, N_800_K_17, N_900_K_18, N_1000_K_19, N_2000_K_27, N_3000_K_33])
     results_mean = np.array(
-        [*list(results.mean(axis=1)), np.array(N_3000_K_33).mean()])
+        [*list(results.mean(axis=1)), np.array(N_4000_K_38).mean(), np.array(N_5000_K_42).mean()])
     results_std_dev = np.array(
-        [*list(results.std(axis=1)), np.array(N_3000_K_33).std()])
+        [*list(results.std(axis=1)), np.array(N_4000_K_38).std(), np.array(N_5000_K_42).std()])
 
-    A = np.vstack([np.array(Ns_K_BPs), np.ones(len(Ns_K_BPs))]).T
-    m, c = np.linalg.lstsq(A, results_mean, rcond=None)[0]
+    def power_law(x, a, b):
+        return a*np.power(x, b)
+    pars, cov = curve_fit(f=power_law, xdata=np.array(
+        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
+
+    def exp_law(x, a, b):
+        return a*np.exp(b * np.log(x)**2)
+    pars_exp, cov_exp = curve_fit(f=exp_law, xdata=np.array(
+        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
                                                       yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
     caplines1[0].set_marker("_")
-    interp_x = np.array([Ns_K_BPs[0] - 100, *Ns_K_BPs, Ns_K_BPs[-1] + 100])
-    plt.plot(interp_x, m * np.array(interp_x) +
-             c, color=PLOTS_COLORS[-1])
+
+    interp_x = np.linspace(Ns_K_BPs[0] - 100, Ns_K_BPs[-1] + 100, 10000)
+    interp_line = plt.plot(interp_x, power_law(
+        interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
+
+    interp_line_exp = plt.plot(interp_x, exp_law(
+        interp_x, pars_exp[0], pars_exp[1]), color=PLOTS_COLORS[-1])
+
     if log_y:
         plt.yscale("log")
-    label = f"N (each point is over {n_samples} samples)"
+    label = f"N (each point is over {n_samples} samples for N <= 3000, 8 samples for N=4000, 6 samples for N=5000)"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
-    plt.legend([plotline1], [
-               "Start of hard phase (K_BP = floor(sqrt(N/e)))"])
+    plt.legend([plotline1, interp_line[0], interp_line_exp[0]], [
+               "Start of hard phase (K_BP = floor(sqrt(N/e)))", f"a * N^b with b={round(pars[1], 2)}", f"a * exp(b * N) with b={round(pars_exp[1], 2)}"])
     plt.show()
 
 
-def createPlotTimeOfConvergence_N700_to_N2000_K_BPminus1(log_y=False):
+def createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False):
     index_color = 2
-    n_samples = 8
-    Ns_K_BPs = [700, 800, 900, 1000, 2000]
-    N_700_K_15 = [11809, 59827, 55941, 11920, 10235, 15500, 10445, 2237]
-    N_800_K_16 = [11395, 653, 3677, 25073, 23239, 24289, 4380, 490]
-    N_900_K_17 = [6659, 3261, 18815, 8847, 9049, 1871, 14863, 9993]
-    N_1000_K_18 = [7397, 12455, 1333, 2801, 3749, 44313, 1805, 1793]
-    N_2000_K_26 = [87447, 17005, 45527, 12555, 51627, 293851, 112189]
+    n_samples = 12
+    Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000]
+    N_700_K_14_2 = [3191, 107, 1664, 1886]
+    N_700_K_14 = [629, 318, 521, 389, 6049, 4384, 201, 3977, *N_700_K_14_2]
+    N_800_K_15_2 = [48049, 9469, 26399, 33945]
+    N_800_K_15 = [13461, 11293, 5471, 8675,
+                  16985, 5593, 20468, 8632, *N_800_K_15_2]
+    N_900_K_16_2 = [4762, 60676, 24223, 67651]
+    N_900_K_16 = [47600, 26943, 96071, 57141,
+                  120170, 26031, 1155, 23086, *N_900_K_16_2]
+    N_1000_K_17_2 = [175, 2153, 20901, 12885]
+    N_1000_K_17 = [42649, 36621, 17643, 5991,
+                   171615, 64213, 35629, 1635, *N_1000_K_17_2]
+    N_2000_K_25_2 = [23615, 91239, 19107, 10183]
+    N_2000_K_25 = [135955, 22961, 9213, 121483,
+                   151031, 10047, 3539, 23223, *N_2000_K_25_2]
+    N_3000_K_31 = [148415, 435847, 52943,
+                   145013, 146447, 163117, 80453, 273521]
     results = np.array(
-        [N_700_K_15, N_800_K_16, N_900_K_17, N_1000_K_18])
+        [N_700_K_14, N_800_K_15, N_900_K_16, N_1000_K_17, N_2000_K_25])
     results_mean = np.array(
-        [*list(results.mean(axis=1)), np.array(N_2000_K_26).mean()])
+        [*list(results.mean(axis=1)), np.array(N_3000_K_31).mean()])
     results_std_dev = np.array(
-        [*list(results.std(axis=1)), np.array(N_2000_K_26).std()])
+        [*list(results.std(axis=1)), np.array(N_3000_K_31).std()])
 
-    A = np.vstack([np.array(Ns_K_BPs), np.ones(len(Ns_K_BPs))]).T
-    m, c = np.linalg.lstsq(A, results_mean, rcond=None)[0]
+    def power_law(x, a, b):
+        return a*np.power(x, b)
+    pars, cov = curve_fit(f=power_law, xdata=np.array(
+        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
+
+    def exp_law(x, a, b):
+        return a*np.exp(b * np.log(x)**2)
+    pars_exp, cov_exp = curve_fit(f=exp_law, xdata=np.array(
+        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
                                                       yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
     caplines1[0].set_marker("_")
-    interp_x = np.array([Ns_K_BPs[0] - 100, *Ns_K_BPs, Ns_K_BPs[-1] + 100])
-    plt.plot(interp_x, m * np.array(interp_x) +
-             c, color=PLOTS_COLORS[-1])
+
+    interp_x = np.linspace(Ns_K_BPs[0] - 100, Ns_K_BPs[-1] + 100, 10000)
+    interp_line = plt.plot(interp_x, power_law(
+        interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
+
+    interp_line_exp = plt.plot(interp_x, exp_law(
+        interp_x, pars_exp[0], pars_exp[1]), color=PLOTS_COLORS[-1])
+
     if log_y:
         plt.yscale("log")
-    label = f"N (each point is over {n_samples} samples)"
+    label = f"N (each point is over {n_samples} samples, 8 samples for N=3000)"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
-    plt.legend([plotline1], [
-               "Hard phase (K_BP - 1 = floor(sqrt(N/e))) - 1"])
+    plt.legend([plotline1, interp_line[0], interp_line_exp[0]], [
+               "Hard phase (K_BP - 2 = floor(sqrt(N/e))) - 2", f"a * N^b with b={round(pars[1], 2)}", f"a * exp(b * N) with b={round(pars_exp[1], 2)}"])
     plt.show()
 
 
-def createPlotTimeOfConvergence_N700_to_N4000_KsaroundHard(log_y=False):
-    # order in the file: K_BP, K_BP - 1, K_BP - 2 (no 700), K_BP + 1, K_BP + 2
+def createPlotTimeOfConvergence_N700_to_N5000_sqrt(log_y=False):
+    # to compare for N^(0.5-eps): use Ns [700, 1000, 2000, 3000, 4000] for eps=0.062 and Ks [18, 21, 28, 33, 38] (event. 5000, with K 42)
     index_color = 2
-    index_color_minus1 = 0
     n_samples = 8
-    # Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000, 4000]
-    Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000]
-    N_700 = [5780, 31207, 9300, 7340, 11401, 1532, 1633, 7760]
-    N_800 = [48175, 10850, 32620, 169, 18369, 9017, 14512, 4578]
-    N_900 = [9382, 7778, 8013, 7004, 3483, 3217, 10978, 5537]
-    N_1000 = [13054, 3719, 2313, 34678, 5247, 37531, 27964, 1423]
-    N_2000 = [77429, 32938, 25089, 258160, 125528, 103862, 10709, 20733]
-    N_3000 = [35451, 117622, 25345, 88763, 30099, 369286, 38701, 196546]
-    results = np.array([N_700, N_800, N_900, N_1000, N_2000, N_3000])
+    Ns_K_BPs = [700, 1000, 2000, 3000, 4000, 5000]
+    N_700_K_18 = [5067, 473, 3716, 9975, 7245, 10883, 111, 289]
+    N_1000_K_21 = [7633, 1875, 1075, 67, 617, 2237, 4455, 445]
+    N_2000_K_28 = [116675, 140219, 6543, 4199, 51285, 75360, 19313, 35025]
+    N_3000_K_33 = [79673, 75225, 63127, 37781, 93621, 6501, 56727, 55451]
+    N_4000_K_38 = [16929, 237699, 44755, 41333, 83531, 82023, 304713, 96773]
+    N_5000_K_42 = [41273, 371025, 162027, 94849, 298315, 39507]  # warning
+    t = np.array(N_5000_K_42).mean()
+    s = np.array(N_5000_K_42).std()
+    N_5000_K_42.append(t + s)
+    N_5000_K_42.append(t - s)
+    results = np.array(
+        [N_700_K_18, N_1000_K_21, N_2000_K_28, N_3000_K_33, N_4000_K_38, N_5000_K_42])
     results_mean = results.mean(axis=1)
     results_std_dev = results.std(axis=1)
 
-    N_700_minus1 = [3194, 12774, 22961, 18578, 68346, 31217, 43, 203644]
-    N_1000_minus1 = [59467, 47912, 29708, 34077, 8362, 4069, 3304, 131330]
-    N_1000_minus2 = [5603, 55456, 12262, 141487, 44334, 87524, 5363, 58663]
-    N_2000_minus1 = [137638, 2501, 65045, 12750, 128608, 48165, 119159]
-    N_2000_minus1.append(np.array(N_2000_minus1).mean())
-    results_minus1 = np.array([N_700_minus1, N_1000_minus1, N_2000_minus1])
-    results_minus1_mean = results_minus1.mean(axis=1)
-    results_minus1_std_dev = results_minus1.std(axis=1)
+    def power_law(x, a, b):
+        return a*np.power(x, b)
+    pars, cov = curve_fit(f=power_law, xdata=np.array(
+        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
+
+    def exp_law(x, a, b):
+        return a*np.exp(b * np.log(x)**2)
+    pars_exp, cov_exp = curve_fit(f=exp_law, xdata=np.array(
+        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
                                                       yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
     caplines1[0].set_marker("_")
 
-    plotline2, caplines2, barlinecols2 = plt.errorbar(np.array([700, 1000, 2000]), np.array(results_minus1_mean),
-                                                      yerr=np.array(results_minus1_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color_minus1], ecolor=PLOTS_COLORS[index_color_minus1], capsize=3, lolims=False)
-    caplines2[0].set_marker("_")
+    interp_x = np.linspace(Ns_K_BPs[0] - 100, Ns_K_BPs[-1] + 100, 10000)
+    interp_line = plt.plot(interp_x, power_law(
+        interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
+
+    interp_line_exp = plt.plot(interp_x, exp_law(
+        interp_x, pars_exp[0], pars_exp[1]), color=PLOTS_COLORS[-1])
 
     if log_y:
         plt.yscale("log")
-    label = f"N (each point is over {n_samples} samples)"
+    label = f"N (each point is over {n_samples} samples, 6 samples for N=5000)"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
-    plt.legend([plotline1, plotline2], [
-               "Start of hard phase (K_BP = floor(sqrt(N/e)))", "Hard phase (K_BP - 1)"])
+    plt.legend([plotline1, interp_line[0], interp_line_exp[0]], [
+               "K_tilde = round(N^(1/2 - eps)), eps=0.062", f"a * N^b with b={round(pars[1], 2)}", f"a * exp(b * N) with b={round(pars_exp[1], 2)}"])
     plt.show()
 
 
-def createPlotTimeOfConvergenceChangingK():
+def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_line=False):
     n_samples = 8
 
     N_700_K_15 = [11809, 59827, 55941, 11920, 10235, 15500, 10445, 2237]
     N_700_K_16 = [1817, 6621, 2221, 13483, 8413, 5235, 36295, 3561]
     N_700_K_17 = [6925, 2797, 4968, 15381, 19810, 4542, 6408, 15007]
     N_700_K_18 = [5067, 473, 3716, 9975, 7245, 10883, 111, 289]
+    N_700_K_20 = [555, 579, 105, 67, 443, 2539, 2451, 3475]
+    N_700_K_22 = [225, 453, 553, 139, 391, 369, 181, 319]
 
-    N_800_K_15 = [13461, 11293, 5471, 8675, 16985, 5593, 20468, 8632]
-    N_800_K_16 = [11395, 653, 3677, 25073, 23239, 24289, 4380, 490]
-    N_800_K_17 = [6695, 541, 299, 5087, 15555, 1003, 5441, 975]
-
-    N_900_K_16 = [47600, 26943, 96071, 57141, 120170, 26031, 1155, 23086]
-    N_900_K_17 = [6659, 3261, 18815, 8847, 9049, 1871, 14863, 9993]
-    N_900_K_18 = [7623, 5843, 1789, 3083, 3103, 1273, 5683, 1975]
-
+    N_1000_K_16 = [7892, 110619, 1163, 158409, 114681, 10084, 73653, 35527]
     N_1000_K_17 = [42649, 36621, 17643, 5991, 171615, 64213, 35629, 1635]
     N_1000_K_18 = [7397, 12455, 1333, 2801, 3749, 44313, 1805, 1793]
     N_1000_K_19 = [2635, 13111, 7931, 7031, 13515, 26049, 7379, 33679]
     N_1000_K_20 = [2837, 5133, 6717, 3385, 23493, 9401, 20775, 18742]
     N_1000_K_21 = [7633, 1875, 1075, 67, 617, 2237, 4455, 445]
+    N_1000_K_23 = [3381, 318, 16043, 5878, 5059, 3154, 1659, 5193]
+    N_1000_K_25 = [5965, 4153, 1977, 2215, 957, 383, 869, 4333]
 
-    K_tildes_N700 = [round(K / np.log2(700), 2) for K in [15, 16, 17, 18]]
-    K_tildes_N800 = [round(K / np.log2(800), 2) for K in [15, 16, 17]]
-    K_tildes_N900 = [round(K / np.log2(900), 2) for K in [16, 17, 18]]
+    N_2000_K_20 = [392101, 392101, 392101,
+                   392101, 392101, 392101, 392101, 392101]
+    N_2000_K_22 = [211353, 233457, 413185,
+                   154133, 375989, 238615, 28637, 283873]
+    N_2000_K_25 = [135955, 22961, 9213, 121483, 151031, 10047, 3539, 23223]
+    N_2000_K_26 = [87447, 17005, 45527, 12555, 51627, 293851, 112189, 87895]
+    N_2000_K_27 = [10699, 78087, 7345, 36023, 28527, 8743, 134253, 39411]
+    N_2000_K_28 = [116675, 140219, 6543, 4199, 51285, 75360, 19313, 35025]
+
+    # N_700_K_15.remove(np.array(N_700_K_15).max())
+    # N_700_K_16.remove(np.array(N_700_K_16).max())
+    # N_700_K_17.remove(np.array(N_700_K_17).max())
+    # N_700_K_18.remove(np.array(N_700_K_18).max())
+    # N_700_K_20.remove(np.array(N_700_K_20).max())
+    # N_700_K_22.remove(np.array(N_700_K_22).max())
+
+    # N_1000_K_16.remove(np.array(N_1000_K_16).max())
+    # N_1000_K_17.remove(np.array(N_1000_K_17).max())
+    # N_1000_K_18.remove(np.array(N_1000_K_18).max())
+    # N_1000_K_19.remove(np.array(N_1000_K_19).max())
+    # N_1000_K_20.remove(np.array(N_1000_K_20).max())
+    # N_1000_K_21.remove(np.array(N_1000_K_21).max())
+    # N_1000_K_23.remove(np.array(N_1000_K_23).max())
+    # N_1000_K_25.remove(np.array(N_1000_K_25).max())
+
+    # N_2000_K_22.remove(np.array(N_2000_K_22).max())
+    # N_2000_K_25.remove(np.array(N_2000_K_25).max())
+    # N_2000_K_26.remove(np.array(N_2000_K_26).max())
+    # N_2000_K_27.remove(np.array(N_2000_K_27).max())
+    # N_2000_K_28.remove(np.array(N_2000_K_28).max())
+
+    K_tildes_N700 = [round(K / np.log2(700), 2)
+                     for K in [15, 16, 17, 18, 20, 22]]
     K_tildes_N1000 = [round(K / np.log2(1000), 2)
-                      for K in [17, 18, 19, 20, 21]]
+                      for K in [16, 17, 18, 19, 20, 21, 23, 25]]
+    K_tildes_N2000 = [round(K / np.log2(2000), 2)
+                      for K in [20, 22, 25, 26, 27, 28]]
 
-    N_700 = np.array([N_700_K_15, N_700_K_16, N_700_K_17, N_700_K_18])
-    N_800 = np.array([N_800_K_15, N_800_K_16, N_800_K_17])
-    N_900 = np.array([N_900_K_16, N_900_K_17, N_900_K_18])
+    N_700 = np.array([N_700_K_15, N_700_K_16, N_700_K_17,
+                     N_700_K_18, N_700_K_20, N_700_K_22])
     N_1000 = np.array(
-        [N_1000_K_17, N_1000_K_18, N_1000_K_19, N_1000_K_20, N_1000_K_21])
+        [N_1000_K_16, N_1000_K_17, N_1000_K_18, N_1000_K_19, N_1000_K_20, N_1000_K_21, N_1000_K_23, N_1000_K_25])
+    N_2000 = np.array(
+        [N_2000_K_20, N_2000_K_22, N_2000_K_25, N_2000_K_26, N_2000_K_27, N_2000_K_28])
 
     means_700 = N_700.mean(axis=1)
-    means_800 = N_800.mean(axis=1)
-    means_900 = N_900.mean(axis=1)
     means_1000 = N_1000.mean(axis=1)
+    means_2000 = N_2000.mean(axis=1)
 
     std_700 = N_700.std(axis=1)
-    std_800 = N_800.std(axis=1)
-    std_900 = N_900.std(axis=1)
     std_1000 = N_1000.std(axis=1)
+    std_2000 = N_2000.std(axis=1)
 
+    if with_interp_line:
+        def power_law(x, a, b):
+            return a*np.power(2000, 1.49) / np.power(x - np.ones(len(x)) * 1.595, b)
+        pars, cov = curve_fit(f=power_law, xdata=np.array(
+            K_tildes_N2000), ydata=means_2000, p0=[0, 0], bounds=(-np.inf, np.inf))
+
+    color_index = 0
+    if with_interp_line:
+        color_index = 1
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(K_tildes_N700), means_700,
-                                                      yerr=std_700, fmt=f"x", color=PLOTS_COLORS[0], ecolor=PLOTS_COLORS[0], capsize=3, lolims=False, ls="-")
+                                                      yerr=std_700, fmt=f"x", color=PLOTS_COLORS[color_index], ecolor=PLOTS_COLORS[color_index], capsize=3, lolims=False, ls="-")
     caplines1[0].set_marker("_")
-    plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(K_tildes_N800), means_800,
-                                                      yerr=std_800, fmt=f"x", color=PLOTS_COLORS[2], ecolor=PLOTS_COLORS[2], capsize=3, lolims=False, ls="-")
+    plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(K_tildes_N1000), means_1000,
+                                                      yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3, lolims=False, ls="-")
     caplines2[0].set_marker("_")
-    plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(K_tildes_N900), means_900,
-                                                      yerr=std_900, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3, lolims=False, ls="-")
+    plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(K_tildes_N2000), means_2000,
+                                                      yerr=std_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=False, ls="-")
     caplines3[0].set_marker("_")
-    plotline4, caplines4, barlinecols4 = plt.errorbar(np.array(K_tildes_N1000), means_1000,
-                                                      yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=False, ls="-")
-    caplines4[0].set_marker("_")
-    # plt.yscale("log")
-    label = f"K_tilde (each point is over {n_samples} samples)"
+
+    if with_interp_line:
+        interp_x = np.linspace(1.76, round(K_tildes_N2000[-1] * 1.1, 2), 10000)
+        interp_line = plt.plot(interp_x, power_law(
+            interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
+
+    if log_y:
+        plt.yscale("log")
+    label = f"K_tilde (each point is over {n_samples} samples, except for N=2000 and K_tilde={K_tildes_N2000[0]} with 1 sample)"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
-    plt.legend([plotline1, plotline2, plotline3, plotline4], [
-               "N = 700", "N = 800", "N = 900", "N = 1000"])
+    if with_interp_line:
+        plt.legend([plotline1, plotline2, plotline3, interp_line[0]], [
+            "N = 700", "N = 1000", "N = 2000", f"a * N^1.49 / (K_tilde - 1.595)^b with b={round(pars[1], 2)}"])
+    else:
+        plt.legend([plotline1, plotline2, plotline3], [
+            "N = 700", "N = 1000", "N = 2000"])
     plt.show()
 
 
-def parseLogFile(log_filename, file_out, file_out_list):
-    count = 0
-    current = ""
-    if len(file_out_list) > 0:
-        with open(file_out_list, "w") as f_out:
-            with open(log_filename, "r") as f:
-                lines = f.readlines()
-                for l in lines:
-                    if len(current) > 0:
-                        if "WARNING" not in l:
-                            count += 1
-                            if count < 8:
-                                f_out.write(f"{current}, ")
-                            else:
-                                f_out.write(f"{current}")
-                        current = ""
-                    elif "N " in l:
-                        count = 0
-                        val = l.replace(" ", "_").replace("\n", "_")
-                        f_out.write(f"]\n{val}")
-                    elif "K " in l and "True" not in l:
-                        val = l.replace(" ", "_").replace("\n", " = ")
-                        f_out.write(f"{val}[")
-                    elif "#" in l:
-                        steps = l[l.index("#") + 1:]
-                        steps = steps[:steps.index(",")]
-                        current = steps
-    count = 0
-    current = ""
-    if len(file_out) > 0:
-        with open(file_out, "w") as f_out:
-            with open(log_filename, "r") as f:
-                lines = f.readlines()
-                for l in lines:
-                    if len(current) > 0:
-                        if "WARNING" not in l:
-                            count += 1
-                            if count < 8:
-                                f_out.write(f"{current}, ")
-                            else:
-                                f_out.write(f"{current}")
-                        current = ""
-                    elif "N " in l:
-                        count = 0
-                        f_out.write(f"]\n{l}")
-                    elif "K " in l and "True" not in l:
-                        f_out.write(f"{l}[")
-                    elif "#" in l:
-                        steps = l[l.index("#") + 1:]
-                        steps = steps[:steps.index(",")]
-                        current = steps
-    if len(file_out) > 0:
-        if len(file_out_list) > 0:
-            print("Files", file_out, file_out_list, "created")
-        else:
-            print("File", file_out, "created")
-    elif len(file_out_list) > 0:
-        print("File", file_out_list, "created")
+def createPlotAcceptanceMetropolis_K_BP_N_700_5000():
+    Ns = [700, 800, 900, 1000, 2000, 3000, 4000, 5000]
+    acceptance_N_700_K_16 = [[0.051, 0.272, 0.888], [0.083, 0.278, 0.887], [0.17, 0.281, 0.89], [0.077, 0.259, 0.886], [0.134, 0.281, 0.894], [
+        0.07, 0.256, 0.893], [0.094, 0.261, 0.886], [0.099, 0.28, 0.896], [0.083, 0.269, 0.89], [0.103, 0.288, 0.889], [0.064, 0.257, 0.89], [0.155, 0.28, 0.889]]
+    acceptance_N_800_K_17 = [[0.174, 0.275, 0.887], [0.088, 0.33, 0.922], [0.095, 0.406, 0.921], [0.107, 0.252, 0.887], [0.09, 0.253, 0.886], [
+        0.08, 0.293, 0.884], [0.069, 0.268, 0.888], [0.149, 0.272, 0.885], [0.13, 0.295, 0.902], [0.073, 0.31, 0.887], [0.111, 0.231, 0.887], [0.061, 0.248, 0.887]]
+    acceptance_N_900_K_18 = [[0.148, 0.271, 0.886], [0.083, 0.368, 0.902], [0.113, 0.329, 0.899], [0.152, 0.31, 0.891], [0.143, 0.343, 0.896], [
+        0.102, 0.396, 0.909], [0.087, 0.316, 0.901], [0.143, 0.266, 0.889], [0.143, 0.242, 0.879], [0.124, 0.252, 0.88], [0.123, 0.271, 0.882], [0.132, 0.253, 0.881]]
+    acceptance_N_1000_K_19 = [[0.12, 0.267, 0.87], [0.034, 0.302, 0.889], [0.11, 0.362, 0.9], [0.175, 0.281, 0.882], [0.134, 0.33, 0.89], [
+        0.12, 0.315, 0.89], [0.06, 0.265, 0.883], [0.056, 0.24, 0.875], [0.129, 0.249, 0.877], [0.131, 0.27, 0.882], [0.143, 0.246, 0.875], [0.14, 0.249, 0.879]]
+    acceptance_N_2000_K_27 = [[0.019, 0.428, 0.922], [0.016, 0.434, 0.923], [0.024, 0.433, 0.922], [0.025, 0.439, 0.922], [0.018, 0.435, 0.922], [
+        0.011, 0.42, 0.92], [0.007, 0.431, 0.923], [0.011, 0.43, 0.923], [0.022, 0.444, 0.922], [0.014, 0.432, 0.922], [0.039, 0.439, 0.917], [0.005, 0.432, 0.922]]
+    acceptance_N_3000_K_33 = [[0.01, 0.372, 0.911], [0.002, 0.363, 0.911], [0.005, 0.374, 0.912], [0.14, 0.179, 0.824], [0.03, 0.174, 0.824], [
+        0.075, 0.184, 0.83], [0.13, 0.187, 0.822], [0.065, 0.178, 0.825], [0.004, 0.362, 0.911], [0.006, 0.372, 0.913], [0.004, 0.376, 0.913], [0.011, 0.357, 0.907]]
+    acceptance_N_4000_K_38 = [[0.004, 0.258, 0.856], [0.001, 0.326, 0.903], [0.008, 0.273, 0.863], [
+        0.003, 0.312, 0.902], [0.079, 0.155, 0.808], [0.12, 0.174, 0.811], [0.084, 0.16, 0.81], [0.113, 0.163, 0.81]]
+    acceptance_N_5000_K_42 = [[0.003, 0.262, 0.867], [0.022, 0.15, 0.8], [
+        0.092, 0.163, 0.799], [0.063, 0.138, 0.799], [0.117, 0.154, 0.8], [0.071, 0.161, 0.797]]
+    beta_1 = [[] for _ in range(8)]
+    beta_055 = [[] for _ in range(8)]
+    beta_01 = [[] for _ in range(8)]
+    for l in acceptance_N_700_K_16:
+        beta_1[0].append(l[0])
+        beta_055[0].append(l[1])
+        beta_01[0].append(l[2])
+    for l in acceptance_N_800_K_17:
+        beta_1[1].append(l[0])
+        beta_055[1].append(l[1])
+        beta_01[1].append(l[2])
+    for l in acceptance_N_900_K_18:
+        beta_1[2].append(l[0])
+        beta_055[2].append(l[1])
+        beta_01[2].append(l[2])
+    for l in acceptance_N_1000_K_19:
+        beta_1[3].append(l[0])
+        beta_055[3].append(l[1])
+        beta_01[3].append(l[2])
+    for l in acceptance_N_2000_K_27:
+        beta_1[4].append(l[0])
+        beta_055[4].append(l[1])
+        beta_01[4].append(l[2])
+    for l in acceptance_N_3000_K_33:
+        beta_1[5].append(l[0])
+        beta_055[5].append(l[1])
+        beta_01[5].append(l[2])
+    for l in acceptance_N_4000_K_38:
+        beta_1[6].append(l[0])
+        beta_055[6].append(l[1])
+        beta_01[6].append(l[2])
+    for l in acceptance_N_5000_K_42:
+        beta_1[7].append(l[0])
+        beta_055[7].append(l[1])
+        beta_01[7].append(l[2])
+    beta_1_mean = []
+    beta_055_mean = []
+    beta_01_mean = []
+    beta_1_std = []
+    beta_055_std = []
+    beta_01_std = []
+    for v in beta_1:
+        beta_1_mean.append(np.array(v).mean())
+        beta_1_std.append(np.array(v).std())
+    for v in beta_055:
+        beta_055_mean.append(np.array(v).mean())
+        beta_055_std.append(np.array(v).std())
+    for v in beta_01:
+        beta_01_mean.append(np.array(v).mean())
+        beta_01_std.append(np.array(v).std())
+    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns), np.array(beta_1_mean),
+                                                      yerr=np.array(beta_1_std), fmt=f"x", color=PLOTS_COLORS[0], ecolor=PLOTS_COLORS[0], capsize=3, lolims=False)
+    caplines1[0].set_marker("_")
+    plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(Ns), np.array(beta_055_mean),
+                                                      yerr=np.array(beta_055_std), fmt=f"x", color=PLOTS_COLORS[3], ecolor=PLOTS_COLORS[3], capsize=3, lolims=False)
+    caplines2[0].set_marker("_")
+    plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(Ns), np.array(beta_01_mean),
+                                                      yerr=np.array(beta_01_std), fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=False)
+    caplines3[0].set_marker("_")
+    if False:
+        plt.yscale("log")
+    label = f"N (size of the graph)"
+    plt.xlabel(label)
+    plt.ylabel("Candidate accepted in %")
+    plt.legend([plotline1, plotline2, plotline3], [
+               "beta=1.0", "beta=0.55", "beta=0.1"])
+    plt.show()
+
+
+def createPlotAcceptanceMetropolis_Ks_N_1000():
+    Ks = [16, 17, 18, 19, 20, 21, 23, 25]
+    acceptance_N_1000_K_16 = [[0.101, 0.272, 0.885], [0.046, 0.253, 0.888], [0.062, 0.421, 0.931], [
+        0.048, 0.255, 0.891], [0.043, 0.258, 0.891], [0.102, 0.277, 0.895], [0.066, 0.253, 0.888], [0.109, 0.265, 0.892]]
+    acceptance_N_1000_K_17 = [[0.075, 0.26, 0.886], [0.113, 0.26, 0.885], [0.072, 0.262, 0.888], [
+        0.082, 0.292, 0.892], [0.045, 0.236, 0.883], [0.043, 0.239, 0.884], [0.117, 0.253, 0.886], [0.021, 0.54, 0.943], [0.106, 0.313, 0.885], [0.115, 0.238, 0.885], [0.088, 0.244, 0.884], [0.132, 0.255, 0.882]]
+    acceptance_N_1000_K_18 = [[0.045, 0.277, 0.885], [0.122, 0.267, 0.879], [0.11, 0.292, 0.895], [
+        0.045, 0.234, 0.88], [0.144, 0.301, 0.889], [0.085, 0.225, 0.878], [0.1, 0.277, 0.898], [0.111, 0.299, 0.893]]
+    acceptance_N_1000_K_19 = [[0.12, 0.267, 0.87], [0.034, 0.302, 0.889], [0.11, 0.362, 0.9], [0.175, 0.281, 0.882], [0.134, 0.33, 0.89], [
+        0.12, 0.315, 0.89], [0.06, 0.265, 0.883], [0.056, 0.24, 0.875], [0.129, 0.249, 0.877], [0.131, 0.27, 0.882], [0.143, 0.246, 0.875], [0.14, 0.249, 0.879]]
+    acceptance_N_1000_K_20 = [[0.026, 0.496, 0.929], [0.031, 0.517, 0.937], [0.03, 0.528, 0.937], [
+        0.072, 0.529, 0.936], [0.044, 0.327, 0.896], [0.025, 0.513, 0.934], [0.045, 0.501, 0.936], [0.043, 0.257, 0.888]]
+    acceptance_N_1000_K_21 = [[0.024, 0.492, 0.933], [0.033, 0.502, 0.938], [0.034, 0.489, 0.932], [
+        0.021, 0.373, 0.931], [0.03, 0.515, 0.933], [0.062, 0.507, 0.93], [0.063, 0.503, 0.933], [0.049, 0.503, 0.93]]
+    acceptance_N_1000_K_23 = [[0.084, 0.225, 0.875], [0.133, 0.304, 0.875], [0.097, 0.25, 0.869], [
+        0.189, 0.243, 0.871], [0.15, 0.246, 0.874], [0.096, 0.25, 0.866], [0.175, 0.269, 0.873], [0.129, 0.248, 0.873]]
+    acceptance_N_1000_K_25 = [[0.104, 0.234, 0.866], [0.176, 0.244, 0.869], [0.144, 0.242, 0.873], [
+        0.081, 0.218, 0.865], [0.187, 0.308, 0.866], [0.126, 0.253, 0.863], [0.227, 0.302, 0.87], [0.15, 0.217, 0.869]]
+    beta_1 = [[] for _ in range(8)]
+    beta_055 = [[] for _ in range(8)]
+    beta_01 = [[] for _ in range(8)]
+    for l in acceptance_N_1000_K_16:
+        beta_1[0].append(l[0])
+        beta_055[0].append(l[1])
+        beta_01[0].append(l[2])
+    for l in acceptance_N_1000_K_17:
+        beta_1[1].append(l[0])
+        beta_055[1].append(l[1])
+        beta_01[1].append(l[2])
+    for l in acceptance_N_1000_K_18:
+        beta_1[2].append(l[0])
+        beta_055[2].append(l[1])
+        beta_01[2].append(l[2])
+    for l in acceptance_N_1000_K_19:
+        beta_1[3].append(l[0])
+        beta_055[3].append(l[1])
+        beta_01[3].append(l[2])
+    for l in acceptance_N_1000_K_20:
+        beta_1[4].append(l[0])
+        beta_055[4].append(l[1])
+        beta_01[4].append(l[2])
+    for l in acceptance_N_1000_K_21:
+        beta_1[5].append(l[0])
+        beta_055[5].append(l[1])
+        beta_01[5].append(l[2])
+    for l in acceptance_N_1000_K_23:
+        beta_1[6].append(l[0])
+        beta_055[6].append(l[1])
+        beta_01[6].append(l[2])
+    for l in acceptance_N_1000_K_25:
+        beta_1[7].append(l[0])
+        beta_055[7].append(l[1])
+        beta_01[7].append(l[2])
+    beta_1_mean = []
+    beta_055_mean = []
+    beta_01_mean = []
+    beta_1_std = []
+    beta_055_std = []
+    beta_01_std = []
+    for v in beta_1:
+        beta_1_mean.append(np.array(v).mean())
+        beta_1_std.append(np.array(v).std())
+    for v in beta_055:
+        beta_055_mean.append(np.array(v).mean())
+        beta_055_std.append(np.array(v).std())
+    for v in beta_01:
+        beta_01_mean.append(np.array(v).mean())
+        beta_01_std.append(np.array(v).std())
+    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ks), np.array(beta_1_mean),
+                                                      yerr=np.array(beta_1_std), fmt=f"x", color=PLOTS_COLORS[0], ecolor=PLOTS_COLORS[0], capsize=3, lolims=False)
+    caplines1[0].set_marker("_")
+    plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(Ks), np.array(beta_055_mean),
+                                                      yerr=np.array(beta_055_std), fmt=f"x", color=PLOTS_COLORS[3], ecolor=PLOTS_COLORS[3], capsize=3, lolims=False)
+    caplines2[0].set_marker("_")
+    plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(Ks), np.array(beta_01_mean),
+                                                      yerr=np.array(beta_01_std), fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=False)
+    caplines3[0].set_marker("_")
+    if False:
+        plt.yscale("log")
+    label = f"K (size of the planted clique) (N = 1000)"
+    plt.xlabel(label)
+    plt.ylabel("Candidate accepted in %")
+    plt.legend([plotline1, plotline2, plotline3], [
+               "beta=1.0", "beta=0.55", "beta=0.1"])
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -1328,414 +1453,13 @@ if __name__ == '__main__':
 
     # ===============================
     # Create plots from data
-    # createPlotTimeOfConvergenceChangingK_N700_to_N1000(subplots=True, with_line=False, log_y=False)
-    # createPlotTimeOfConvergence_N100_to_N4000_K_BP(interpolate_line=False, log_y=False)
-    # createPlotFoundNodesEvolutionPerBeta_N100_K24()
-    # createPlotTimeOfConvergence_N700_to_N3000_K_BP(log_y=False)
-    # createPlotTimeOfConvergence_N700_to_N2000_K_BPminus1(log_y=False)
-    # createPlotTimeOfConvergence_N700_to_N4000_KsaroundHard(log_y=False)
-    # createPlotTimeOfConvergenceChangingK()
+    # createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False)
+    # createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False)
+    # createPlotTimeOfConvergence_N700_to_N5000_sqrt(log_y=False)
+    # createPlotTimeOfConvergenceChangingK_N_700_2000(
+    #     log_y=False, with_interp_line=True)
+    # createPlotAcceptanceMetropolis_K_BP_N_700_5000()
+    # createPlotAcceptanceMetropolis_Ks_N_1000()
     # ===============================
 
-    # ===============================
-    # TESTS
-
-    # Paper short
-    # Ns = [2000, 3000, 4000, 5000]
-    # K_tildes_N2000 = [1.64, 1.82, 2.01,
-    #               2.18, 2.37, 2.55, 2.73]
-    # K_tildes_N3000 = [1.73, 1.9, 2.07, 2.25, 2.43, 2.6, 2.77, 2.86]
-    # K_tildes_N4000 = [1.92, 2.09, 2.26, 2.42,
-    #                 2.59, 2.76, 2.92, 3.09, 3.26]
-    # K_tildes_N5000 = [2.19, 2.36, 2.52, 2.68,
-    #                 2.85, 3.01, 3.17, 3.34, 3.5]
-    # K_tildes = [K_tildes_N2000, K_tildes_N3000, K_tildes_N4000, K_tildes_N5000]
-    # n_samples = 5  # number of graph realizations per N
-    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
-
-    # Small Ns
-    # Ns = [700, 800, 900, 1000]
-    # K_tildes_N700 = [2.09, 1.89, 1.69, 1.59]
-    # K_tildes_N800 = [2.06, 1.86, 1.76, 1.66, 1.56]
-    # K_tildes_N900 = [2.13, 1.93, 1.83, 1.73, 1.63]
-    # K_tildes_N1000 = [2.21, 2.01, 1.91, 1.81, 1.71, 1.6]
-    # K_tildes = [K_tildes_N700, K_tildes_N800, K_tildes_N900, K_tildes_N1000]
-    # n_samples = 14  # number of graph realizations per N
-    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
-
-    # Hard phase
-    # Ns = [700, 1000, 2000, 3000, 4000]
-    # K_tildes = [[float(floor(np.sqrt(N/np.e)) - i) / np.log2(N)
-    #              for i in range(3 if N != 700 else 2)] for N in Ns]
-    # n_samples = 8  # number of graph realizations per N
-    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
-
-    # Easy phase
-    # Ns = [700, 1000, 2000, 3000, 4000]
-    # K_tildes = [[float(floor(np.sqrt(N/np.e)) + i) / np.log2(N)
-    #              for i in range(1, 3)] for N in Ns]
-    # n_samples = 8  # number of graph realizations per N
-    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
-
-    # Hard phase complete
-    # Ns = [700, 800, 900, 1000, 2000, 3000, 4000]
-    # K_tildes = []
-    # K_tildes.append([floor(np.sqrt(700/np.e)), floor(np.sqrt(700/np.e)) - 1,
-    #                 floor(np.sqrt(700/np.e)) + 1, floor(np.sqrt(700/np.e)) + 2])
-    # K_tildes.append([floor(np.sqrt(800/np.e))])
-    # K_tildes.append([floor(np.sqrt(900/np.e))])
-    # K_tildes.append([floor(np.sqrt(1000/np.e)), floor(np.sqrt(1000/np.e)) - 1, floor(
-    #     np.sqrt(1000/np.e)) - 2, floor(np.sqrt(1000/np.e)) + 1, floor(np.sqrt(1000/np.e)) + 2])
-    # K_tildes.append([floor(np.sqrt(2000/np.e)), floor(np.sqrt(2000/np.e)) - 1, floor(
-    #     np.sqrt(2000/np.e)) - 2, floor(np.sqrt(2000/np.e)) + 1, floor(np.sqrt(2000/np.e)) + 2])
-    # K_tildes.append([floor(np.sqrt(3000/np.e)), floor(np.sqrt(3000/np.e)) - 1, floor(
-    #     np.sqrt(3000/np.e)) - 2, floor(np.sqrt(3000/np.e)) + 1, floor(np.sqrt(3000/np.e)) + 2])
-    # K_tildes.append([floor(np.sqrt(4000/np.e)), floor(np.sqrt(4000/np.e)) - 1, floor(
-    #     np.sqrt(4000/np.e)) - 2, floor(np.sqrt(4000/np.e)) + 1, floor(np.sqrt(4000/np.e)) + 2])
-    # for i in range(len(K_tildes)):
-    #     for j in range(len(K_tildes[i])):
-    #         K_tildes[i][j] = float(K_tildes[i][j]) / np.log2(Ns[i])
-    # n_samples = 8  # number of graph realizations per N
-    # Ns.reverse()
-    # K_tildes.reverse()
-    # print("Sampling threshold 0.66")
-    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
-
-    # Hard phase complete 5000
-    # Ns = [5000]
-    # K_tildes = []
-    # K_tildes.append([floor(np.sqrt(5000/np.e)), floor(np.sqrt(5000/np.e)) - 1, floor(
-    #     np.sqrt(5000/np.e)) - 2, floor(np.sqrt(5000/np.e)) + 1, floor(np.sqrt(5000/np.e)) + 2, *[37, 35, 33, 31, 29, 27]])
-    # for i in range(len(K_tildes)):
-    #     for j in range(len(K_tildes[i])):
-    #         K_tildes[i][j] = float(K_tildes[i][j]) / np.log2(Ns[i])
-    # n_samples = 8  # number of graph realizations per N
-    # print("Sampling all hard phase for N=5000 (method: > threshold and % 2)")
-    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
-
-    # Hard phase paper's results completion
-    # Ns = [2000, 3000, 4000]
-    # K_tildes = [[22, 20, 18], [28, 26, 24, 22, 20], [33, 31, 29, 27, 25, 23]]
-    # for i in range(len(K_tildes)):
-    #     for j in range(len(K_tildes[i])):
-    #         K_tildes[i][j] = float(K_tildes[i][j]) / np.log2(Ns[i])
-    # n_samples = 8  # number of graph realizations per N
-    # timeOfConvergenceChangingK(
-    #     Ns, K_tildes, n_samples=n_samples)
-
-    # Hard phase complete
-    # Ns = [3000]
-    # K_tildes = []
-    # K_tildes.append([floor(np.sqrt(3000/np.e)), floor(np.sqrt(3000/np.e)) - 1, floor(
-    #     np.sqrt(3000/np.e)) - 2, floor(np.sqrt(3000/np.e)) + 1, floor(np.sqrt(3000/np.e)) + 2])
-    # for i in range(len(K_tildes)):
-    #     for j in range(len(K_tildes[i])):
-    #         K_tildes[i][j] = float(K_tildes[i][j]) / np.log2(Ns[i])
-    # n_samples = 8  # number of graph realizations per N
-    # print("Sampling only 3000 threshold 0.66")
-    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
-
-    # Ns = [800, 900, 1000]
-    # K_tildes = []
-    # K_tildes.append([floor(np.sqrt(800/np.e)) - 1,
-    #                 floor(np.sqrt(800/np.e)) - 2])
-    # K_tildes.append([floor(np.sqrt(900/np.e)) - 1,
-    #                 floor(np.sqrt(900/np.e)) - 2])
-    # K_tildes.append([floor(np.sqrt(1000/np.e)) - 3])
-    # for i in range(len(K_tildes)):
-    #     for j in range(len(K_tildes[i])):
-    #         K_tildes[i][j] = float(K_tildes[i][j]) / np.log2(Ns[i])
-    # n_samples = 8  # number of graph realizations per N
-    # print("Sampling only rest threshold 0.66")
-    # timeOfConvergenceChangingK(Ns, K_tildes, n_samples=n_samples)
-
-    # ada-14
-    Ns = [700, 800, 900, 1000, 2000, 3000, 4000]
-    K_tildes = [[floor(np.sqrt(N/np.e)) / np.log2(N)] for N in Ns]
-    n_samples = 4
-    print("700 to 4000, 4 samples, at K_BP, threshold: 0.58")
-    timeOfConvergenceChangingK(
-        Ns, K_tildes, n_samples=n_samples, send_result_email=False)
-
-    # ===============================
-
-    # x = np.linspace(Ns[0], Ns[-1], Ns[-1] - Ns[0])
-    # y_sqrt = np.sqrt(x / np.e)
-    # y_log16 = 1.6 * np.log2(x)
-    # y_log2 = 2 * np.log2(x)
-    # plt.plot(x, y_sqrt, color="b")
-    # plt.plot(x, y_log2, color="r")
-    # plt.plot(x, y_log16, color="orange")
-    # plt.show()
-
-    # print([floor(np.sqrt(N/np.e)) for N in [700, 800, 900, 1000, 2000, 3000]])
-
-    # ssh access: ssh pytharski -l lhommey
     pass
-
-
-"""
-NOTES:
-for hard phase index 0 I used betas with 0.15 intervals from N=5000
-
-
-really small Ns
-Ns = [100, 200, 300, 400, 500]
-Ks = [13, 15, 16, 17, 17]
-
-
-K_BP changing N
-Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000, 4000]
-K_BPs = [floor(np.sqrt(N/np.e)) for N in Ns_K_BPs]
-results = [[] for _ in range(len(Ns_K_BPs))]
-
-paper:
-K_tildes_N2000 = [1.64, 1.82, 2.01,
-                  2.18, 2.37, 2.55, 2.73]
-K_tildes_N3000 = [1.73, 1.9, 2.07, 2.25, 2.43, 2.6, 2.77, 2.86]
-K_tildes_N4000 = [1.92, 2.09, 2.26, 2.42,
-                  2.59, 2.76, 2.92, 3.09, 3.26]
-K_tildes_N5000 = [2.19, 2.36, 2.52, 2.68,
-                  2.85, 3.01, 3.17, 3.34, 3.5]
-# K_tildes_N2000 = [1.64, 1.73, 1.82, 1.92, 2.01,
-#                   2.09, 2.18, 2.28, 2.37, 2.46, 2.55, 2.64, 2.73]
-# K_tildes_N3000 = [1.73, 1.82, 1.9, 1.99, 2.07, 2.16,
-#                   2.25, 2.34, 2.43, 2.51, 2.6, 2.68, 2.77, 2.86]
-# K_tildes_N4000 = [1.92, 2.01, 2.09, 2.17, 2.26, 2.34, 2.42,
-#                   2.51, 2.59, 2.67, 2.76, 2.84, 2.92, 3.01, 3.09, 3.17, 3.26]
-# K_tildes_N5000 = [2.19, 2.28, 2.36, 2.44, 2.52, 2.61, 2.68,
-#                   2.77, 2.85, 2.93, 3.01, 3.09, 3.17, 3.26, 3.34, 3.42, 3.5]
-"""
-
-
-"""
-Old functions
-
-def createPlotTimeOfConvergence_N700_to_N4000_K_BP(log_y=False):
-    index_color = 2
-    n_samples = 8
-    # Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000, 4000]
-    Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000]
-    N_700 = [5780, 31207, 9300, 7340, 11401, 1532, 1633, 7760]
-    N_800 = [48175, 10850, 32620, 169, 18369, 9017, 14512, 4578]
-    N_900 = [9382, 7778, 8013, 7004, 3483, 3217, 10978, 5537]
-    N_1000 = [13054, 3719, 2313, 34678, 5247, 37531, 27964, 1423]
-    N_2000 = [77429, 32938, 25089, 258160, 125528, 103862, 10709, 20733]
-    N_3000 = [35451, 117622, 25345, 88763, 30099, 369286, 38701, 196546]
-    results = np.array([N_700, N_800, N_900, N_1000, N_2000, N_3000])
-    results_mean = results.mean(axis=1)
-    results_std_dev = results.std(axis=1)
-    # filename = f"results_K_BP"
-    # for N in Ns_K_BPs:
-    #     filename += f"_{N}"
-    # with open(f"{filename}.npy", "rb") as f:
-    #     results = np.load(f)
-    #     results_mean = results.mean(axis=1)
-    #     results_std_dev = results.std(axis=1)
-
-    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
-                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
-    caplines1[0].set_marker("_")
-    if log_y:
-        plt.yscale("log")
-    label = f"N (each point is over {n_samples} samples)"
-    plt.xlabel(label)
-    plt.ylabel("Number of PT steps needed")
-    plt.legend([plotline1], [
-               "Start of hard phase (K_BP = floor(sqrt(N/e)))"])
-    plt.show()
-
-def drawCandidate(x, N, method="switch_1", p=0.5, k=1):
-    # methods:
-    #    switch_1: switch 1 element of x with probability p
-    #    switch_k: switch k element of x independently with probability p
-    # Old method that did not take into account the fact that the inserted elements have to be linked to the other elements of the current clique
-    
-    x_candidate = np.copy(x)
-    if method in ["switch_1", "switch_k"]:
-        if method == "switch_1":
-            k = 1
-        choice = np.random.choice(N, k, replace=True)
-        for i in choice:
-            p_switch = np.random.uniform()
-            if p_switch < p:
-                x_candidate[i] = 1 - x_candidate[i]
-        return x_candidate
-    return x_candidate
-
-
-def drawCandidateWithCliqueCheck(x, N, A, method="switch_1", p=0.5, k=1):
-    # methods:
-    #    switch_1: switch 1 element of x with probability p
-    #    switch_k: switch k element of x independently with probability p
-    # Ensure that all inserted elements are linked to the other elements of the current clique
-    # return a candidate (np array with entries 0 or 1)
-    # (Computation really slow use one of the drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes methods instead)
-    
-    x_candidate = np.copy(x)
-    if method in ["switch_1", "switch_k"]:
-        if method == "switch_1":
-            k = 1
-        if N < k:
-            k = N
-        choice = np.random.choice(N, k, replace=False)
-        for i in choice:
-            p_switch = np.random.uniform()
-            if p_switch < p:
-                if x_candidate[i] == 1:
-                    x_candidate[i] = 0
-                else:
-                    if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
-                        x_candidate[i] = 1
-        return x_candidate
-    return x_candidate
-
-
-def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_1(x, N, K, A, method="switch_1", p=0.5, k=1, param_remove=0.5):
-    # methods:
-    #    switch_1: switch 1 element of x with probability p
-    #    switch_k: switch k element of x independently with probability p
-    # Ensure that all inserted elements are linked to the other elements of the current clique
-    # Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
-    # return a candidate (np array with entries 0 or 1)
-    # First implementation (not the fastest)
-    
-    x_candidate = np.copy(x)
-    if method in ["switch_1", "switch_k"]:
-        if method == "switch_1":
-            k = 1
-            if N < k:
-                k = N
-            choice = np.random.choice(N, k, replace=False)
-            for i in choice:
-                p_switch = np.random.uniform()
-                if p_switch < p:
-                    if x_candidate[i] == 1:
-                        x_candidate[i] = 0
-                    else:
-                        if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
-                            x_candidate[i] = 1
-            return x_candidate
-        else:
-            if N < k:
-                k = N
-            clique_indices1 = [i for i in range(N) if x_candidate[i] == 1]
-            k_remove = max(
-                1, floor(len(clique_indices1) * param_remove))
-            k_add = k - k_remove
-            if len(clique_indices1) == 0:
-                k_add = k
-            else:
-                if k_remove > len(clique_indices1):
-                    k_remove = len(clique_indices1)
-                    k_add = k - k_remove
-                choice_remove = np.random.choice(
-                    clique_indices1, k_remove, replace=False)
-                for i in choice_remove:
-                    p_switch = np.random.uniform()
-                    if p_switch < p:
-                        x_candidate[i] = 0
-            common_neighbors = []
-            clique_indices2 = [i for i in range(N) if x_candidate[i] == 1]
-            common_vector = np.dot(A, x_candidate)
-            clique_indices2_len = len(clique_indices2)
-            for i in range(N):
-                if common_vector[i] == clique_indices2_len:
-                    common_neighbors.append(i)
-            if k_add > len(common_neighbors):
-                k_add = len(common_neighbors)
-            choice_add = np.random.choice(
-                common_neighbors, k_add, replace=False)
-            added = []
-            for i in choice_add:
-                p_switch = np.random.uniform()
-                if p_switch < p:
-                    if len([j for j in added if A[i, j] != 1]) == 0:
-                        x_candidate[i] = 1
-                        added.append(i)
-            return x_candidate
-    return x_candidate
-
-
-def drawCandidateWithCliqueCheckAndAddingOnlyPossibleNodes_2(x, N, K, A, method="switch_1", p=0.5, k=1, param_remove=0.5):
-    # methods:
-    #    switch_1: switch 1 element of x with probability p
-    #    switch_k: switch k element of x independently with probability p
-    # Ensure that all inserted elements are linked to the other elements of the current clique
-    # Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
-    # return a candidate (np array with entries 0 or 1)
-    # Second implementation (not the fastest)
-    
-    x_candidate = np.copy(x)
-    if method in ["switch_1", "switch_k"]:
-        if method == "switch_1":
-            k = 1
-            if N < k:
-                k = N
-            choice = np.random.choice(N, k, replace=False)
-            for i in choice:
-                p_switch = np.random.uniform()
-                if p_switch < p:
-                    if x_candidate[i] == 1:
-                        x_candidate[i] = 0
-                    else:
-                        if len([j for j in range(N) if j != i and x_candidate[j] == 1 and A[i, j] != 1]) == 0:
-                            x_candidate[i] = 1
-            return x_candidate
-        else:
-            if N < k:
-                k = N
-            clique_indices1 = [i for i in range(N) if x_candidate[i] == 1]
-            k_remove = max(
-                1, floor(len(clique_indices1) * param_remove))
-            k_add = k - k_remove
-            if len(clique_indices1) == 0:
-                k_add = floor(K * 0.5)
-            else:
-                if k_remove > len(clique_indices1):
-                    k_remove = len(clique_indices1)
-                    k_add = k - k_remove
-                choice_remove = np.random.choice(
-                    clique_indices1, k_remove, replace=False)
-                for i in choice_remove:
-                    p_switch = np.random.uniform()
-                    if p_switch < p:
-                        x_candidate[i] = 0
-            not_clique_indices2 = [i for i in range(N) if x_candidate[i] == 0]
-            clique_indices2 = [i for i in range(N) if x_candidate[i] == 1]
-            if k_add > len(not_clique_indices2):
-                k_add = len(not_clique_indices2)
-            choice_add = np.random.choice(
-                not_clique_indices2, k_add, replace=False)
-            n_rejected = 0
-            for i in choice_add:
-                p_switch = np.random.uniform()
-                if p_switch < p:
-                    linked = True
-                    for j in clique_indices2:
-                        if A[i, j] != 1:
-                            linked = False
-                            break
-                    if linked:
-                        x_candidate[i] = 1
-                        clique_indices2.append(i)
-                    else:
-                        n_rejected += 1
-            if n_rejected >= 0.5 * k_add:
-                not_clique_indices2 = [
-                    i for i in range(N) if x_candidate[i] == 0]
-                choice_add = np.random.choice(
-                    not_clique_indices2, n_rejected, replace=False)
-                for i in choice_add:
-                    linked = True
-                    for j in clique_indices2:
-                        if A[i, j] != 1:
-                            linked = False
-                            break
-                    if linked:
-                        x_candidate[i] = 1
-                        clique_indices2.append(i)
-            return x_candidate
-    return x_candidate
-
-"""

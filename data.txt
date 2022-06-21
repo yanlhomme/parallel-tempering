@@ -116,6 +116,64 @@ Progress: |████████████████████| 100.0% 
 Clique 8 recovered (N: 700, K_tilde: 1.9045178217916556)
 ===================== START sampling =====================
 SETTINGS:
+N 700
+K 20
+K_tilde 2.1161309131018395
+Average degree: 348.54857142857145
+Progress: |████████████████████| 100.0% of the clique size (step #555, beta config flips: 2370, accept: | 1.0: 14.7%, 0.55: 31.8%, 0.1: 90.4%)
+Clique 1 recovered (N: 700, K_tilde: 2.1161309131018395)
+Average degree: 349.62
+Progress: |████████████████████| 100.0% of the clique size (step #579, beta config flips: 2582, accept: | 1.0: 7.4%, 0.55: 42.8%, 0.1: 91.3%)
+Clique 2 recovered (N: 700, K_tilde: 2.1161309131018395)
+Average degree: 350.78
+Progress: |████████████████████| 100.0% of the clique size (step #105, beta config flips: 517, accept: | 1.0: 15.1%, 0.55: 45.6%, 0.1: 93.7%)
+Clique 3 recovered (N: 700, K_tilde: 2.1161309131018395)
+Average degree: 349.58285714285716
+Progress: |████████████████████| 100.0% of the clique size (step #67, beta config flips: 310, accept: | 1.0: 5.1%, 0.55: 38.2%, 0.1: 92.8%)
+Clique 4 recovered (N: 700, K_tilde: 2.1161309131018395)
+Average degree: 348.52285714285716
+Progress: |████████████████████| 100.0% of the clique size (step #443, beta config flips: 2193, accept: | 1.0: 14.0%, 0.55: 54.2%, 0.1: 93.5%)
+Clique 5 recovered (N: 700, K_tilde: 2.1161309131018395)
+Average degree: 349.5514285714286
+Progress: |████████████████████| 100.0% of the clique size (step #2539, beta config flips: 11150, accept: | 1.0: 15.5%, 0.55: 31.4%, 0.1: 89.3%)
+Clique 6 recovered (N: 700, K_tilde: 2.1161309131018395)
+Average degree: 350.97714285714284
+Progress: |████████████████████| 100.0% of the clique size (step #2451, beta config flips: 10889, accept: | 1.0: 17.9%, 0.55: 28.2%, 0.1: 88.0%)
+Clique 7 recovered (N: 700, K_tilde: 2.1161309131018395)
+Average degree: 350.24
+Progress: |████████████████████| 100.0% of the clique size (step #3475, beta config flips: 14949, accept: | 1.0: 12.8%, 0.55: 32.9%, 0.1: 88.9%)
+Clique 8 recovered (N: 700, K_tilde: 2.1161309131018395)
+===================== START sampling =====================
+SETTINGS:
+N 700
+K 22
+K_tilde 2.3277440044120237
+Average degree: 349.62
+Progress: |████████████████████| 100.0% of the clique size (step #225, beta config flips: 1092, accept: | 1.0: 10.0%, 0.55: 46.4%, 0.1: 91.9%)
+Clique 1 recovered (N: 700, K_tilde: 2.3277440044120237)
+Average degree: 350.8485714285714
+Progress: |████████████████████| 100.0% of the clique size (step #453, beta config flips: 2040, accept: | 1.0: 2.0%, 0.55: 45.7%, 0.1: 92.5%)
+Clique 2 recovered (N: 700, K_tilde: 2.3277440044120237)
+Average degree: 350.01714285714286
+Progress: |████████████████████| 100.0% of the clique size (step #553, beta config flips: 2545, accept: | 1.0: 4.4%, 0.55: 47.1%, 0.1: 92.6%)
+Clique 3 recovered (N: 700, K_tilde: 2.3277440044120237)
+Average degree: 349.77714285714285
+Progress: |████████████████████| 100.0% of the clique size (step #139, beta config flips: 615, accept: | 1.0: 6.0%, 0.55: 43.1%, 0.1: 91.7%)
+Clique 4 recovered (N: 700, K_tilde: 2.3277440044120237)
+Average degree: 348.9057142857143
+Progress: |████████████████████| 100.0% of the clique size (step #391, beta config flips: 1879, accept: | 1.0: 9.5%, 0.55: 48.8%, 0.1: 92.6%)
+Clique 5 recovered (N: 700, K_tilde: 2.3277440044120237)
+Average degree: 350.3514285714286
+Progress: |████████████████████| 100.0% of the clique size (step #369, beta config flips: 1729, accept: | 1.0: 7.1%, 0.55: 47.9%, 0.1: 93.4%)
+Clique 6 recovered (N: 700, K_tilde: 2.3277440044120237)
+Average degree: 349.96285714285716
+Progress: |████████████████████| 100.0% of the clique size (step #181, beta config flips: 863, accept: | 1.0: 4.8%, 0.55: 44.4%, 0.1: 91.4%)
+Clique 7 recovered (N: 700, K_tilde: 2.3277440044120237)
+Average degree: 350.30285714285714
+Progress: |████████████████████| 100.0% of the clique size (step #319, beta config flips: 1469, accept: | 1.0: 5.1%, 0.55: 43.2%, 0.1: 93.0%)
+Clique 8 recovered (N: 700, K_tilde: 2.3277440044120237)
+===================== START sampling =====================
+SETTINGS:
 N 800
 K 17
 K_tilde 1.762780330343884
@@ -524,6 +582,64 @@ Progress: |████████████████████| 100.0% 
 Clique 8 recovered (N: 1000, K_tilde: 1.6054933102078996)
 ===================== START sampling =====================
 SETTINGS:
+N 1000
+K 23
+K_tilde 2.307896633423856
+Average degree: 499.504
+Progress: |████████████████████| 100.0% of the clique size (step #3381, beta config flips: 13927, accept: | 1.0: 8.4%, 0.55: 22.5%, 0.1: 87.5%)
+Clique 1 recovered (N: 1000, K_tilde: 2.307896633423856)
+Average degree: 499.626
+Progress: |████████████████████| 100.0% of the clique size (step #318, beta config flips: 1414, accept: | 1.0: 13.3%, 0.55: 30.4%, 0.1: 87.5%)
+Clique 2 recovered (N: 1000, K_tilde: 2.307896633423856)
+Average degree: 500.534
+Progress: |████████████████████| 100.0% of the clique size (step #16043, beta config flips: 63266, accept: | 1.0: 9.7%, 0.55: 25.0%, 0.1: 86.9%)
+Clique 3 recovered (N: 1000, K_tilde: 2.307896633423856)
+Average degree: 499.062
+Progress: |████████████████████| 100.0% of the clique size (step #5878, beta config flips: 25124, accept: | 1.0: 18.9%, 0.55: 24.3%, 0.1: 87.1%)
+Clique 4 recovered (N: 1000, K_tilde: 2.307896633423856)
+Average degree: 498.882
+Progress: |████████████████████| 100.0% of the clique size (step #5059, beta config flips: 21189, accept: | 1.0: 15.0%, 0.55: 24.6%, 0.1: 87.4%)
+Clique 5 recovered (N: 1000, K_tilde: 2.307896633423856)
+Average degree: 499.938
+Progress: |████████████████████| 100.0% of the clique size (step #3154, beta config flips: 12859, accept: | 1.0: 9.6%, 0.55: 25.0%, 0.1: 86.6%)
+Clique 6 recovered (N: 1000, K_tilde: 2.307896633423856)
+Average degree: 498.812
+Progress: |████████████████████| 100.0% of the clique size (step #1659, beta config flips: 7340, accept: | 1.0: 17.5%, 0.55: 26.9%, 0.1: 87.3%)
+Clique 7 recovered (N: 1000, K_tilde: 2.307896633423856)
+Average degree: 499.588
+Progress: |████████████████████| 100.0% of the clique size (step #5193, beta config flips: 21615, accept: | 1.0: 12.9%, 0.55: 24.8%, 0.1: 87.3%)
+Clique 8 recovered (N: 1000, K_tilde: 2.307896633423856)
+===================== START sampling =====================
+SETTINGS:
+N 1000
+K 25
+K_tilde 2.508583297199843
+Average degree: 499.636
+Progress: |████████████████████| 100.0% of the clique size (step #5965, beta config flips: 23533, accept: | 1.0: 10.4%, 0.55: 23.4%, 0.1: 86.6%)
+Clique 1 recovered (N: 1000, K_tilde: 2.508583297199843)
+Average degree: 499.236
+Progress: |████████████████████| 100.0% of the clique size (step #4153, beta config flips: 17412, accept: | 1.0: 17.6%, 0.55: 24.4%, 0.1: 86.9%)
+Clique 2 recovered (N: 1000, K_tilde: 2.508583297199843)
+Average degree: 500.336
+Progress: |████████████████████| 100.0% of the clique size (step #1977, beta config flips: 8316, accept: | 1.0: 14.4%, 0.55: 24.2%, 0.1: 87.3%)
+Clique 3 recovered (N: 1000, K_tilde: 2.508583297199843)
+Average degree: 499.62
+Progress: |████████████████████| 100.0% of the clique size (step #2215, beta config flips: 9326, accept: | 1.0: 8.1%, 0.55: 21.8%, 0.1: 86.5%)
+Clique 4 recovered (N: 1000, K_tilde: 2.508583297199843)
+Average degree: 499.25
+Progress: |████████████████████| 100.0% of the clique size (step #957, beta config flips: 4281, accept: | 1.0: 18.7%, 0.55: 30.8%, 0.1: 86.6%)
+Clique 5 recovered (N: 1000, K_tilde: 2.508583297199843)
+Average degree: 499.318
+Progress: |████████████████████| 100.0% of the clique size (step #383, beta config flips: 1571, accept: | 1.0: 12.6%, 0.55: 25.3%, 0.1: 86.3%)
+Clique 6 recovered (N: 1000, K_tilde: 2.508583297199843)
+Average degree: 499.518
+Progress: |████████████████████| 100.0% of the clique size (step #869, beta config flips: 3794, accept: | 1.0: 22.7%, 0.55: 30.2%, 0.1: 87.0%)
+Clique 7 recovered (N: 1000, K_tilde: 2.508583297199843)
+Average degree: 499.382
+Progress: |████████████████████| 100.0% of the clique size (step #4333, beta config flips: 18218, accept: | 1.0: 15.0%, 0.55: 21.7%, 0.1: 86.9%)
+Clique 8 recovered (N: 1000, K_tilde: 2.508583297199843)
+===================== START sampling =====================
+SETTINGS:
 N 2000
 K 27
 K_tilde 2.4622041888754893
@@ -603,8 +719,70 @@ Clique 5 recovered (N: 2000, K_tilde: 2.2798186934032305)
 Average degree: 999.752
 Progress: |████████████████████| 100.0% of the clique size (step #10047, beta config flips: 43754, accept: | 1.0: 2.2%, 0.55: 46.6%, 0.1: 92.6%)
 Clique 6 recovered (N: 2000, K_tilde: 2.2798186934032305)
-
-
+Average degree: 1000.003
+Progress: |████████████████████| 100.0% of the clique size (step #3539, beta config flips: 14795, accept: | 1.0: 7.4%, 0.55: 17.4%, 0.1: 85.0%)
+Clique 7 recovered (N: 2000, K_tilde: 2.2798186934032305)
+Average degree: 999.028
+Progress: |████████████████████| 100.0% of the clique size (step #23223, beta config flips: 92009, accept: | 1.0: 8.8%, 0.55: 19.9%, 0.1: 85.0%)
+Clique 8 recovered (N: 2000, K_tilde: 2.2798186934032305)
+===================== START sampling =====================
+SETTINGS:
+N 2000
+K 28
+K_tilde 2.5533969366116183
+Average degree: 999.186
+Progress: |████████████████████| 100.0% of the clique size (step #116675, beta config flips: 449591, accept: | 1.0: 8.8%, 0.55: 18.3%, 0.1: 85.4%)
+Clique 1 recovered (N: 2000, K_tilde: 2.5533969366116183)
+Average degree: 999.511
+Progress: |████████████████████| 100.0% of the clique size (step #140219, beta config flips: 543651, accept: | 1.0: 10.0%, 0.55: 20.4%, 0.1: 85.4%)
+Clique 2 recovered (N: 2000, K_tilde: 2.5533969366116183)
+Average degree: 998.545
+Progress: |████████████████████| 100.0% of the clique size (step #6543, beta config flips: 27317, accept: | 1.0: 10.8%, 0.55: 20.5%, 0.1: 85.3%)
+Clique 3 recovered (N: 2000, K_tilde: 2.5533969366116183)
+Average degree: 998.905
+Progress: |████████████████████| 100.0% of the clique size (step #4199, beta config flips: 17729, accept: | 1.0: 14.4%, 0.55: 23.8%, 0.1: 85.3%)
+Clique 4 recovered (N: 2000, K_tilde: 2.5533969366116183)
+Average degree: 1000.04
+Progress: |████████████████████| 100.0% of the clique size (step #51285, beta config flips: 191384, accept: | 1.0: 6.1%, 0.55: 20.8%, 0.1: 85.2%)
+Clique 5 recovered (N: 2000, K_tilde: 2.5533969366116183)
+Average degree: 999.49
+Progress: |████████████████████| 100.0% of the clique size (step #75360, beta config flips: 291838, accept: | 1.0: 8.5%, 0.55: 20.7%, 0.1: 85.3%)
+Clique 6 recovered (N: 2000, K_tilde: 2.5533969366116183)
+Average degree: 1000.003
+Progress: |████████████████████| 100.0% of the clique size (step #19313, beta config flips: 76062, accept: | 1.0: 13.7%, 0.55: 21.9%, 0.1: 85.1%)
+Clique 7 recovered (N: 2000, K_tilde: 2.5533969366116183)
+Average degree: 999.987
+Progress: |████████████████████| 100.0% of the clique size (step #35025, beta config flips: 132430, accept: | 1.0: 18.4%, 0.55: 21.4%, 0.1: 85.6%)
+Clique 8 recovered (N: 2000, K_tilde: 2.5533969366116183)
+===================== START sampling =====================
+SETTINGS:
+N 2000
+K 29
+K_tilde 2.6445896843477477
+Average degree: 999.537
+Progress: |████████████████████| 100.0% of the clique size (step #46249, beta config flips: 175784, accept: | 1.0: 7.8%, 0.55: 20.7%, 0.1: 84.9%)
+Clique 1 recovered (N: 2000, K_tilde: 2.6445896843477477)
+Average degree: 999.251
+Progress: |████████████████████| 100.0% of the clique size (step #7083, beta config flips: 29768, accept: | 1.0: 13.5%, 0.55: 22.2%, 0.1: 85.3%)
+Clique 2 recovered (N: 2000, K_tilde: 2.6445896843477477)
+Average degree: 999.693
+Progress: |████████████████████| 100.0% of the clique size (step #84592, beta config flips: 335361, accept: | 1.0: 8.9%, 0.55: 20.6%, 0.1: 85.1%)
+Clique 3 recovered (N: 2000, K_tilde: 2.6445896843477477)
+Average degree: 999.395
+Progress: |████████████████████| 100.0% of the clique size (step #9339, beta config flips: 38919, accept: | 1.0: 13.9%, 0.55: 23.0%, 0.1: 85.2%)
+Clique 4 recovered (N: 2000, K_tilde: 2.6445896843477477)
+Average degree: 1000.398
+Progress: |████████████████████| 100.0% of the clique size (step #16031, beta config flips: 66695, accept: | 1.0: 13.8%, 0.55: 21.8%, 0.1: 84.8%)
+Clique 5 recovered (N: 2000, K_tilde: 2.6445896843477477)
+Average degree: 999.094
+Progress: |████████████████████| 100.0% of the clique size (step #65971, beta config flips: 265001, accept: | 1.0: 10.6%, 0.55: 20.4%, 0.1: 85.0%)
+Clique 6 recovered (N: 2000, K_tilde: 2.6445896843477477)
+Average degree: 1000.693
+Progress: |████████████████████| 100.0% of the clique size (step #68861, beta config flips: 272218, accept: | 1.0: 15.2%, 0.55: 20.8%, 0.1: 84.9%)
+Clique 7 recovered (N: 2000, K_tilde: 2.6445896843477477)
+Average degree: 1000.169
+Progress: |████████████████████| 100.0% of the clique size (step #19801, beta config flips: 78922, accept: | 1.0: 16.5%, 0.55: 22.4%, 0.1: 85.1%)
+Clique 8 recovered (N: 2000, K_tilde: 2.6445896843477477)
 ===================== START sampling =====================
 SETTINGS:
 N 3000
@@ -619,7 +797,50 @@ Clique 2 recovered (N: 3000, K_tilde: 2.856958135534532
 Average degree: 1498.4053333333334
 Progress: |████████████████████| 100.0% of the clique size (step #63127, beta config flips: 254055, accept: | 1.0: 0.5%, 0.55: 37.4%, 0.1: 91.2%)
 Clique 3 recovered (N: 3000, K_tilde: 2.856958135534532)
-
+Average degree: 1499.7566666666667
+Progress: |████████████████████| 100.0% of the clique size (step #37781, beta config flips: 138587, accept: | 1.0: 14.0%, 0.55: 17.9%, 0.1: 82.4%)
+Clique 4 recovered (N: 3000, K_tilde: 2.856958135534532)
+Average degree: 1498.854
+Progress: |████████████████████| 100.0% of the clique size (step #93621, beta config flips: 328603, accept: | 1.0: 3.0%, 0.55: 17.4%, 0.1: 82.4%)
+Clique 5 recovered (N: 3000, K_tilde: 2.856958135534532)
+Average degree: 1500.9986666666666
+Progress: |████████████████████| 100.0% of the clique size (step #6501, beta config flips: 24766, accept: | 1.0: 7.5%, 0.55: 18.4%, 0.1: 83.0%)
+Clique 6 recovered (N: 3000, K_tilde: 2.856958135534532)
+Average degree: 1501.0546666666667
+Progress: |████████████████████| 100.0% of the clique size (step #56727, beta config flips: 221239, accept: | 1.0: 13.0%, 0.55: 18.7%, 0.1: 82.2%)
+Clique 7 recovered (N: 3000, K_tilde: 2.856958135534532)
+Average degree: 1498.8466666666666
+Progress: |████████████████████| 100.0% of the clique size (step #57301, beta config flips: 204730, accept: | 1.0: 6.5%, 0.55: 17.8%, 0.1: 82.5%)
+Clique 8 recovered (N: 3000, K_tilde: 2.856958135534532)
+===================== START sampling =====================
+SETTINGS:
+N 3000
+K 31
+K_tilde 2.6838091576233483
+Average degree: 1499.8026666666667
+Progress: |████████████████████| 100.0% of the clique size (step #148415, beta config flips: 539861, accept: | 1.0: 10.7%, 0.55: 16.9%, 0.1: 82.9%)
+Clique 1 recovered (N: 3000, K_tilde: 2.6838091576233483)
+Average degree: 1499.55
+Progress: |████████████████████| 100.0% of the clique size (step #435847, beta config flips: 1575700, accept: | 1.0: 3.6%, 0.55: 17.0%, 0.1: 83.0%)
+Clique 2 recovered (N: 3000, K_tilde: 2.6838091576233483)
+Average degree: 1500.6226666666666
+Progress: |████████████████████| 100.0% of the clique size (step #52943, beta config flips: 202437, accept: | 1.0: 9.4%, 0.55: 17.7%, 0.1: 82.8%)
+Clique 3 recovered (N: 3000, K_tilde: 2.6838091576233483)
+Average degree: 1499.7033333333334
+Progress: |████████████████████| 100.0% of the clique size (step #145013, beta config flips: 529869, accept: | 1.0: 10.9%, 0.55: 17.0%, 0.1: 83.1%)
+Clique 4 recovered (N: 3000, K_tilde: 2.6838091576233483)
+Average degree: 1499.0706666666667
+Progress: |████████████████████| 100.0% of the clique size (step #146447, beta config flips: 549667, accept: | 1.0: 14.8%, 0.55: 17.9%, 0.1: 82.9%)
+Clique 5 recovered (N: 3000, K_tilde: 2.6838091576233483)
+Average degree: 1499.0406666666668
+Progress: |████████████████████| 100.0% of the clique size (step #163117, beta config flips: 605060, accept: | 1.0: 14.7%, 0.55: 18.2%, 0.1: 83.0%)
+Clique 6 recovered (N: 3000, K_tilde: 2.6838091576233483)
+Average degree: 1498.88
+Progress: |████████████████████| 100.0% of the clique size (step #80453, beta config flips: 317824, accept: | 1.0: 11.3%, 0.55: 17.7%, 0.1: 83.0%)
+Clique 7 recovered (N: 3000, K_tilde: 2.6838091576233483)
+Average degree: 1500.2913333333333
+Progress: |████████████████████| 100.0% of the clique size (step #273521, beta config flips: 1048257, accept: | 1.0: 12.2%, 0.55: 16.5%, 0.1: 82.9%)
+Clique 8 recovered (N: 3000, K_tilde: 2.6838091576233483)
 ===================== START sampling =====================
 SETTINGS:
 N 4000
@@ -637,7 +858,18 @@ Clique 3 recovered (N: 4000, K_tilde: 3.175721632280213)
 Average degree: 1999.833
 Progress: |████████████████████| 100.0% of the clique size (step #41333, beta config flips: 169510, accept: | 1.0: 0.3%, 0.55: 31.2%, 0.1: 90.2%)
 Clique 4 recovered (N: 4000, K_tilde: 3.175721632280213)
-
+Average degree: 1999.273
+Progress: |████████████████████| 100.0% of the clique size (step #83531, beta config flips: 318727, accept: | 1.0: 7.9%, 0.55: 15.5%, 0.1: 80.8%)
+Clique 5 recovered (N: 4000, K_tilde: 3.175721632280213)
+Average degree: 1998.9045
+Progress: |████████████████████| 100.0% of the clique size (step #82023, beta config flips: 289237, accept: | 1.0: 12.0%, 0.55: 17.4%, 0.1: 81.1%)
+Clique 6 recovered (N: 4000, K_tilde: 3.175721632280213)
+Average degree: 1999.305
+Progress: |████████████████████| 100.0% of the clique size (step #304713, beta config flips: 1139021, accept: | 1.0: 8.4%, 0.55: 16.0%, 0.1: 81.0%)
+Clique 7 recovered (N: 4000, K_tilde: 3.175721632280213)
+Average degree: 1999.545
+Progress: |████████████████████| 100.0% of the clique size (step #96773, beta config flips: 356226, accept: | 1.0: 11.3%, 0.55: 16.3%, 0.1: 81.0%)
+Clique 8 recovered (N: 4000, K_tilde: 3.175721632280213)
 ===================== START sampling =====================
 SETTINGS:
 N 5000
@@ -646,8 +878,21 @@ K_tilde 3.4180487549416423
 Average degree: 2499.3416
 Progress: |████████████████████| 100.0% of the clique size (step #41273, beta config flips: 149538, accept: | 1.0: 0.3%, 0.55: 26.2%, 0.1: 86.7%)
 Clique 1 recovered (N: 5000, K_tilde: 3.4180487549416423)
-
-
+Average degree: 2499.7568
+Progress: |████████████████████| 100.0% of the clique size (step #371025, beta config flips: 1281877, accept: | 1.0: 2.2%, 0.55: 15.0%, 0.1: 80.0%)
+Clique 2 recovered (N: 5000, K_tilde: 3.4180487549416423)
+Average degree: 2500.5988
+Progress: |████████████████████| 100.0% of the clique size (step #162027, beta config flips: 583535, accept: | 1.0: 9.2%, 0.55: 16.3%, 0.1: 79.9%)
+Clique 3 recovered (N: 5000, K_tilde: 3.4180487549416423)
+Average degree: 2501.1444
+Progress: |████████████████████| 100.0% of the clique size (step #94849, beta config flips: 364509, accept: | 1.0: 6.3%, 0.55: 13.8%, 0.1: 79.9%)
+Clique 4 recovered (N: 5000, K_tilde: 3.4180487549416423)
+Average degree: 2499.0356
+Progress: |████████████████████| 100.0% of the clique size (step #298315, beta config flips: 1012674, accept: | 1.0: 11.7%, 0.55: 15.4%, 0.1: 80.0%)
+Clique 5 recovered (N: 5000, K_tilde: 3.4180487549416423)
+Average degree: 2499.6756
+Progress: |████████████████████| 100.0% of the clique size (step #39507, beta config flips: 145335, accept: | 1.0: 7.1%, 0.55: 16.1%, 0.1: 79.7%)
+Clique 6 recovered (N: 5000, K_tilde: 3.4180487549416423)
 ______________________
 
 ===================== START sampling =====================
@@ -667,3 +912,248 @@ Clique 3 recovered (N: 2000, K_tilde: 2.006240450194843)
 Average degree: 999.111
 Progress: |████████████████████| 100.0% of the clique size (step #154133, beta config flips: 649524, accept: | 1.0: 10.9%, 0.55: 41.1%, 0.1: 90.8%)
 Clique 4 recovered (N: 2000, K_tilde: 2.006240450194843)
+Average degree: 998.887
+Progress: |████████████████████| 100.0% of the clique size (step #375989, beta config flips: 1473105, accept: | 1.0: 8.3%, 0.55: 28.5%, 0.1: 88.0%)
+Clique 5 recovered (N: 2000, K_tilde: 2.006240450194843)
+Average degree: 998.729
+Progress: |████████████████████| 100.0% of the clique size (step #238615, beta config flips: 1046013, accept: | 1.0: 4.0%, 0.55: 47.9%, 0.1: 92.7%)
+Clique 6 recovered (N: 2000, K_tilde: 2.006240450194843)
+Average degree: 1000.36
+Progress: |████████████████████| 100.0% of the clique size (step #28637, beta config flips: 130907, accept: | 1.0: 4.0%, 0.55: 51.2%, 0.1: 93.5%)
+Clique 7 recovered (N: 2000, K_tilde: 2.006240450194843)
+Average degree: 1000.824
+Progress: |████████████████████| 100.0% of the clique size (step #283873, beta config flips: 1116605, accept: | 1.0: 9.4%, 0.55: 27.1%, 0.1: 87.5%)
+Clique 8 recovered (N: 2000, K_tilde: 2.006240450194843)
+===================== START sampling =====================
+SETTINGS:
+N 2000
+K 20
+K_tilde 1.8238549547225846
+Average degree: 1000.056
+Progress: |████████████████████| 100.0% of the clique size (step #392101, beta config flips: 1412528, accept: | 1.0: 6.3%, 0.55: 22.6%, 0.1: 87.3%)
+Clique 1 recovered (N: 2000, K_tilde: 1.8238549547225846)
+
+_______________________
+===================== START sampling =====================
+SETTINGS:
+N 700
+K 16
+K_tilde 1.6929047304814717
+Average degree: 349.7
+Progress: |████████████████████| 100.0% of the clique size (step #2089, beta config flips: 8456, accept: | 1.0: 1.7%, 0.55: 25.9%, 0.1: 89.1%)
+WARNING: planted clique not recovered
+Estimate is clique: True
+Estimate has size K True
+Estimate common elements with planted clique: 93.8 %
+Average degree: 349.7457142857143
+Progress: |████████████████████| 100.0% of the clique size (step #7241, beta config flips: 28965, accept: | 1.0: 8.3%, 0.55: 26.9%, 0.1: 89.0%)
+Clique 1 recovered (N: 700, K_tilde: 1.6929047304814717)
+Average degree: 349.06857142857143
+Progress: |████████████████████| 100.0% of the clique size (step #5631, beta config flips: 23616, accept: | 1.0: 10.3%, 0.55: 28.8%, 0.1: 88.9%)
+Clique 2 recovered (N: 700, K_tilde: 1.6929047304814717)
+Average degree: 350.68857142857144
+Progress: |████████████████████| 100.0% of the clique size (step #5891, beta config flips: 23680, accept: | 1.0: 6.4%, 0.55: 25.7%, 0.1: 89.0%)
+Clique 3 recovered (N: 700, K_tilde: 1.6929047304814717)
+Average degree: 349.96
+Progress: |████████████████████| 100.0% of the clique size (step #499, beta config flips: 2124, accept: | 1.0: 15.5%, 0.55: 28.0%, 0.1: 88.9%)
+Clique 4 recovered (N: 700, K_tilde: 1.6929047304814717)
+===================== START sampling =====================
+SETTINGS:
+N 800
+K 17
+K_tilde 1.762780330343884
+Average degree: 400.495
+Progress: |████████████████████| 100.0% of the clique size (step #249, beta config flips: 1098, accept: | 1.0: 13.0%, 0.55: 29.5%, 0.1: 90.2%)
+Clique 1 recovered (N: 800, K_tilde: 1.762780330343884)
+Average degree: 398.825
+Progress: |████████████████████| 100.0% of the clique size (step #2545, beta config flips: 10348, accept: | 1.0: 7.3%, 0.55: 31.0%, 0.1: 88.7%)
+Clique 2 recovered (N: 800, K_tilde: 1.762780330343884)
+Average degree: 400.1425
+Progress: |████████████████████| 100.0% of the clique size (step #2727, beta config flips: 11520, accept: | 1.0: 11.1%, 0.55: 23.1%, 0.1: 88.7%)
+Clique 3 recovered (N: 800, K_tilde: 1.762780330343884)
+Average degree: 399.615
+Progress: |████████████████████| 100.0% of the clique size (step #33425, beta config flips: 135853, accept: | 1.0: 6.1%, 0.55: 24.8%, 0.1: 88.7%)
+Clique 4 recovered (N: 800, K_tilde: 1.762780330343884)
+===================== START sampling =====================
+SETTINGS:
+N 900
+K 18
+K_tilde 1.8341554238145557
+Average degree: 450.14666666666665
+Progress: |████████████████████| 100.0% of the clique size (step #39473, beta config flips: 163472, accept: | 1.0: 14.3%, 0.55: 24.2%, 0.1: 87.9%)
+Clique 1 recovered (N: 900, K_tilde: 1.8341554238145557)
+Average degree: 449.93111111111114
+Progress: |████████████████████| 100.0% of the clique size (step #15171, beta config flips: 62235, accept: | 1.0: 12.4%, 0.55: 25.2%, 0.1: 88.0%)
+Clique 2 recovered (N: 900, K_tilde: 1.8341554238145557)
+Average degree: 450.82
+Progress: |████████████████████| 100.0% of the clique size (step #987, beta config flips: 4047, accept: | 1.0: 12.3%, 0.55: 27.1%, 0.1: 88.2%)
+Clique 3 recovered (N: 900, K_tilde: 1.8341554238145557)
+Average degree: 449.08222222222224
+Progress: |████████████████████| 100.0% of the clique size (step #6331, beta config flips: 25868, accept: | 1.0: 13.2%, 0.55: 25.3%, 0.1: 88.1%)
+Clique 4 recovered (N: 900, K_tilde: 1.8341554238145557)
+===================== START sampling =====================
+SETTINGS:
+N 1000
+K 19
+K_tilde 1.906523305871881
+Average degree: 500.638
+Progress: |████████████████████| 100.0% of the clique size (step #18183, beta config flips: 74799, accept: | 1.0: 12.9%, 0.55: 24.9%, 0.1: 87.7%)
+Clique 1 recovered (N: 1000, K_tilde: 1.906523305871881)
+Average degree: 498.952
+Progress: |████████████████████| 100.0% of the clique size (step #2367, beta config flips: 9838, accept: | 1.0: 13.1%, 0.55: 27.0%, 0.1: 88.2%)
+Clique 2 recovered (N: 1000, K_tilde: 1.906523305871881)
+Average degree: 499.82
+Progress: |████████████████████| 100.0% of the clique size (step #25327, beta config flips: 104918, accept: | 1.0: 14.3%, 0.55: 24.6%, 0.1: 87.5%)
+Clique 3 recovered (N: 1000, K_tilde: 1.906523305871881)
+Average degree: 499.09
+Progress: |████████████████████| 100.0% of the clique size (step #9143, beta config flips: 38213, accept: | 1.0: 14.0%, 0.55: 24.9%, 0.1: 87.9%)
+Clique 4 recovered (N: 1000, K_tilde: 1.906523305871881)
+===================== START sampling =====================
+SETTINGS:
+N 2000
+K 27
+K_tilde 2.4622041888754893
+Average degree: 997.959
+Progress: |████████████████████| 100.0% of the clique size (step #9553, beta config flips: 41949, accept: | 1.0: 2.2%, 0.55: 44.4%, 0.1: 92.2%)
+Clique 1 recovered (N: 2000, K_tilde: 2.4622041888754893)
+Average degree: 999.382
+Progress: |████████████████████| 100.0% of the clique size (step #18907, beta config flips: 81367, accept: | 1.0: 1.4%, 0.55: 43.2%, 0.1: 92.2%)
+Clique 2 recovered (N: 2000, K_tilde: 2.4622041888754893)
+Average degree: 999.0
+Progress: |████████████████████| 100.0% of the clique size (step #4167, beta config flips: 18665, accept: | 1.0: 3.9%, 0.55: 43.9%, 0.1: 91.7%)
+Clique 3 recovered (N: 2000, K_tilde: 2.4622041888754893)
+Average degree: 1000.259
+Progress: |████████████████████| 100.0% of the clique size (step #45265, beta config flips: 182845, accept: | 1.0: 0.5%, 0.55: 43.2%, 0.1: 92.2%)
+Clique 4 recovered (N: 2000, K_tilde: 2.4622041888754893)
+===================== START sampling =====================
+SETTINGS:
+N 3000
+K 33
+K_tilde 2.856958135534532
+Average degree: 1501.1606666666667
+Progress: |████████████████████| 100.0% of the clique size (step #55451, beta config flips: 220184, accept: | 1.0: 0.4%, 0.55: 36.2%, 0.1: 91.1%)
+Clique 1 recovered (N: 3000, K_tilde: 2.856958135534532)
+Average degree: 1499.556
+Progress: |████████████████████| 100.0% of the clique size (step #329497, beta config flips: 1371127, accept: | 1.0: 0.6%, 0.55: 37.2%, 0.1: 91.3%)
+Clique 2 recovered (N: 3000, K_tilde: 2.856958135534532)
+Average degree: 1498.8566666666666
+Progress: |████████████████████| 100.0% of the clique size (step #217849, beta config flips: 879346, accept: | 1.0: 0.4%, 0.55: 37.6%, 0.1: 91.3%)
+Clique 3 recovered (N: 3000, K_tilde: 2.856958135534532)
+Average degree: 1500.6106666666667
+Progress: |████████████████████| 100.0% of the clique size (step #100373, beta config flips: 420740, accept: | 1.0: 1.1%, 0.55: 35.7%, 0.1: 90.7%)
+Clique 4 recovered (N: 3000, K_tilde: 2.856958135534532)
+===================== START sampling =====================
+SETTINGS:
+N 700
+K 14
+K_tilde 1.4812916391712878
+Average degree: 350.0857142857143
+Progress: |████████████████████| 100.0% of the clique size (step #629, beta config flips: 2772, accept: | 1.0: 10.1%, 0.55: 30.3%, 0.1: 90.0%)
+Clique 1 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 349.8514285714286
+Progress: |████████████████████| 100.0% of the clique size (step #318, beta config flips: 1382, accept: | 1.0: 6.0%, 0.55: 27.5%, 0.1: 89.7%)
+Other clique 2 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 348.10857142857145
+Progress: |████████████████████| 100.0% of the clique size (step #521, beta config flips: 2252, accept: | 1.0: 10.9%, 0.55: 33.4%, 0.1: 89.6%)
+Other clique 3 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 348.80285714285714
+Progress: |████████████████████| 100.0% of the clique size (step #389, beta config flips: 1671, accept: | 1.0: 11.2%, 0.55: 29.3%, 0.1: 89.2%)
+Clique 4 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 349.7942857142857
+Progress: |████████████████████| 100.0% of the clique size (step #6049, beta config flips: 26371, accept: | 1.0: 8.2%, 0.55: 30.1%, 0.1: 90.0%)
+Other clique 5 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 349.18
+Progress: |████████████████████| 100.0% of the clique size (step #4384, beta config flips: 19052, accept: | 1.0: 10.4%, 0.55: 30.6%, 0.1: 90.6%)
+Other clique 6 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 349.7742857142857
+Progress: |████████████████████| 100.0% of the clique size (step #201, beta config flips: 932, accept: | 1.0: 14.2%, 0.55: 28.7%, 0.1: 91.0%)
+Other clique 7 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 349.51142857142855
+Progress: |████████████████████| 100.0% of the clique size (step #3977, beta config flips: 17396, accept: | 1.0: 9.4%, 0.55: 30.2%, 0.1: 90.5%)
+Other clique 8 recovered (N: 700, K_tilde: 1.4812916391712878)
+______________________
+===================== START sampling =====================
+SETTINGS:
+N 700
+K 14
+K_tilde 1.4812916391712878
+Average degree: 349.5285714285714
+Progress: |████████████████████| 100.0% of the clique size (step #3191, beta config flips: 13849, accept: | 1.0: 9.8%, 0.55: 32.4%, 0.1: 90.4%)
+Other clique 1 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 351.36285714285714
+Progress: |████████████████████| 100.0% of the clique size (step #107, beta config flips: 480, accept: | 1.0: 9.8%, 0.55: 17.6%, 0.1: 92.0%)
+Other clique 2 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 348.8514285714286
+Progress: |████████████████████| 100.0% of the clique size (step #1664, beta config flips: 7335, accept: | 1.0: 10.2%, 0.55: 31.3%, 0.1: 90.7%)
+Other clique 3 recovered (N: 700, K_tilde: 1.4812916391712878)
+Average degree: 349.60571428571427
+Progress: |████████████████████| 100.0% of the clique size (step #1886, beta config flips: 8274, accept: | 1.0: 9.4%, 0.55: 30.1%, 0.1: 89.3%)
+Other clique 4 recovered (N: 700, K_tilde: 1.4812916391712878)
+===================== START sampling =====================
+SETTINGS:
+N 800
+K 15
+K_tilde 1.5553944091269565
+Average degree: 400.48
+Progress: |████████████████████| 100.0% of the clique size (step #48049, beta config flips: 196140, accept: | 1.0: 6.2%, 0.55: 27.0%, 0.1: 89.3%)
+Other clique 1 recovered (N: 800, K_tilde: 1.5553944091269565)
+Average degree: 399.8325
+Progress: |████████████████████| 100.0% of the clique size (step #9469, beta config flips: 38746, accept: | 1.0: 7.4%, 0.55: 26.3%, 0.1: 89.5%)
+Clique 2 recovered (N: 800, K_tilde: 1.5553944091269565)
+Average degree: 398.97
+Progress: |████████████████████| 100.0% of the clique size (step #26399, beta config flips: 107295, accept: | 1.0: 6.6%, 0.55: 27.6%, 0.1: 89.7%)
+Clique 3 recovered (N: 800, K_tilde: 1.5553944091269565)
+Average degree: 401.0975
+Progress: |████████████████████| 100.0% of the clique size (step #33945, beta config flips: 139093, accept: | 1.0: 6.2%, 0.55: 26.4%, 0.1: 89.5%)
+Other clique 4 recovered (N: 800, K_tilde: 1.5553944091269565)
+===================== START sampling =====================
+SETTINGS:
+N 900
+K 16
+K_tilde 1.6303603767240495
+Average degree: 449.1488888888889
+Progress: |████████████████████| 100.0% of the clique size (step #4762, beta config flips: 20136, accept: | 1.0: 12.3%, 0.55: 26.6%, 0.1: 89.1%)
+Other clique 1 recovered (N: 900, K_tilde: 1.6303603767240495)
+Average degree: 450.1311111111111
+Progress: |████████████████████| 100.0% of the clique size (step #60676, beta config flips: 228303, accept: | 1.0: 2.7%, 0.55: 24.8%, 0.1: 88.8%)
+Clique 2 recovered (N: 900, K_tilde: 1.6303603767240495)
+Average degree: 448.72222222222223
+Progress: |████████████████████| 100.0% of the clique size (step #24223, beta config flips: 96167, accept: | 1.0: 7.6%, 0.55: 26.2%, 0.1: 89.3%)
+Clique 3 recovered (N: 900, K_tilde: 1.6303603767240495)
+Average degree: 450.3066666666667
+Progress: |████████████████████| 100.0% of the clique size (step #67651, beta config flips: 262556, accept: | 1.0: 4.8%, 0.55: 25.2%, 0.1: 88.8%)
+Clique 4 recovered (N: 900, K_tilde: 1.6303603767240495)
+===================== START sampling =====================
+SETTINGS:
+N 1000
+K 17
+K_tilde 1.7058366420958935
+Average degree: 499.746
+Progress: |████████████████████| 100.0% of the clique size (step #175, beta config flips: 750, accept: | 1.0: 10.6%, 0.55: 31.3%, 0.1: 88.5%)
+Clique 1 recovered (N: 1000, K_tilde: 1.7058366420958935)
+Average degree: 499.546
+Progress: |████████████████████| 100.0% of the clique size (step #2153, beta config flips: 8953, accept: | 1.0: 11.5%, 0.55: 23.8%, 0.1: 88.5%)
+Clique 2 recovered (N: 1000, K_tilde: 1.7058366420958935)
+Average degree: 500.086
+Progress: |████████████████████| 100.0% of the clique size (step #20901, beta config flips: 79087, accept: | 1.0: 8.8%, 0.55: 24.4%, 0.1: 88.4%)
+Clique 3 recovered (N: 1000, K_tilde: 1.7058366420958935)
+Average degree: 500.584
+Progress: |████████████████████| 100.0% of the clique size (step #12885, beta config flips: 54150, accept: | 1.0: 13.2%, 0.55: 25.5%, 0.1: 88.2%)
+Clique 4 recovered (N: 1000, K_tilde: 1.7058366420958935)
+===================== START sampling =====================
+SETTINGS:
+N 2000
+K 25
+K_tilde 2.2798186934032305
+Average degree: 1000.757
+Progress: |████████████████████| 100.0% of the clique size (step #23615, beta config flips: 97328, accept: | 1.0: 10.8%, 0.55: 19.5%, 0.1: 85.0%)
+Clique 1 recovered (N: 2000, K_tilde: 2.2798186934032305)
+Average degree: 999.57
+Progress: |████████████████████| 100.0% of the clique size (step #91239, beta config flips: 347768, accept: | 1.0: 12.2%, 0.55: 19.6%, 0.1: 85.0%)
+Clique 2 recovered (N: 2000, K_tilde: 2.2798186934032305)
+Average degree: 999.429
+Progress: |████████████████████| 100.0% of the clique size (step #19107, beta config flips: 73459, accept: | 1.0: 13.0%, 0.55: 21.9%, 0.1: 85.0%)
+Clique 3 recovered (N: 2000, K_tilde: 2.2798186934032305)
+Average degree: 997.731
+Progress: |████████████████████| 100.0% of the clique size (step #10183, beta config flips: 41192, accept: | 1.0: 13.2%, 0.55: 21.7%, 0.1: 85.3%)
+Clique 4 recovered (N: 2000, K_tilde: 2.2798186934032305)
