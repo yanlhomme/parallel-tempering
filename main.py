@@ -1,3 +1,4 @@
+from torch import std_mean
 from mails import send_email
 from progressbar import printProgressBar
 import concurrent.futures
@@ -1222,29 +1223,155 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
     color_index = 0
     if with_interp_line:
         color_index = 1
+
+    if log_y:
+        plt.yscale("log")
+
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(K_tildes_N700), means_700,
-                                                      yerr=std_700, fmt=f"x", color=PLOTS_COLORS[color_index], ecolor=PLOTS_COLORS[color_index], capsize=3, lolims=False, ls="-")
-    caplines1[0].set_marker("_")
+                                                      yerr=std_700, fmt=f"x", color=PLOTS_COLORS[color_index], ecolor=PLOTS_COLORS[color_index], capsize=3)
+    # caplines1[0].set_marker("_")
     plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(K_tildes_N1000), means_1000,
-                                                      yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3, lolims=False, ls="-")
-    caplines2[0].set_marker("_")
+                                                      yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3)
+    # caplines2[0].set_marker("_")
     plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(K_tildes_N2000), means_2000,
-                                                      yerr=std_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=False, ls="-")
-    caplines3[0].set_marker("_")
+                                                      yerr=std_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3)
+    # plotline4, caplines4, barlinecols4 = plt.errorbar(np.array(K_tildes_N2000), means_2000 - std_2000,
+    #                                                   yerr=None, fmt=f"x", color="red", ecolor="red", capsize=3)
+    # caplines3[0].set_marker("_")
 
     if with_interp_line:
         interp_x = np.linspace(1.76, round(K_tildes_N2000[-1] * 1.1, 2), 10000)
         interp_line = plt.plot(interp_x, power_law(
             interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
 
-    if log_y:
-        plt.yscale("log")
     label = f"K_tilde (each point is over {n_samples} samples, except for N=2000 and K_tilde={K_tildes_N2000[0]} with 1 sample)"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
+    plt.ylim(top=10**12)
     if with_interp_line:
         plt.legend([plotline1, plotline2, plotline3, interp_line[0]], [
             "N = 700", "N = 1000", "N = 2000", f"a * N^1.49 / (K_tilde - 1.595)^b with b={round(pars[1], 2)}"])
+    else:
+        plt.legend([plotline1, plotline2, plotline3], [
+            "N = 700", "N = 1000", "N = 2000"])
+    plt.show()
+
+
+def createPlotTimeOfConvergenceChangingK_N_700_2000_collapsed(log_y=False, with_interp_line=False):
+    n_samples = 8
+
+    N_700_K_15 = [11809, 59827, 55941, 11920, 10235, 15500, 10445, 2237]
+    N_700_K_16 = [1817, 6621, 2221, 13483, 8413, 5235, 36295, 3561]
+    N_700_K_17 = [6925, 2797, 4968, 15381, 19810, 4542, 6408, 15007]
+    N_700_K_18 = [5067, 473, 3716, 9975, 7245, 10883, 111, 289]
+    N_700_K_20 = [555, 579, 105, 67, 443, 2539, 2451, 3475]
+    N_700_K_22 = [225, 453, 553, 139, 391, 369, 181, 319]
+
+    N_1000_K_16 = [7892, 110619, 1163, 158409, 114681, 10084, 73653, 35527]
+    N_1000_K_17 = [42649, 36621, 17643, 5991, 171615, 64213, 35629, 1635]
+    N_1000_K_18 = [7397, 12455, 1333, 2801, 3749, 44313, 1805, 1793]
+    N_1000_K_19 = [2635, 13111, 7931, 7031, 13515, 26049, 7379, 33679]
+    N_1000_K_20 = [2837, 5133, 6717, 3385, 23493, 9401, 20775, 18742]
+    N_1000_K_21 = [7633, 1875, 1075, 67, 617, 2237, 4455, 445]
+    N_1000_K_23 = [3381, 318, 16043, 5878, 5059, 3154, 1659, 5193]
+    N_1000_K_25 = [5965, 4153, 1977, 2215, 957, 383, 869, 4333]
+
+    N_2000_K_20 = [392101, 392101, 392101,
+                   392101, 392101, 392101, 392101, 392101]
+    N_2000_K_22 = [211353, 233457, 413185,
+                   154133, 375989, 238615, 28637, 283873]
+    N_2000_K_25 = [135955, 22961, 9213, 121483, 151031, 10047, 3539, 23223]
+    N_2000_K_26 = [87447, 17005, 45527, 12555, 51627, 293851, 112189, 87895]
+    N_2000_K_27 = [10699, 78087, 7345, 36023, 28527, 8743, 134253, 39411]
+    N_2000_K_28 = [116675, 140219, 6543, 4199, 51285, 75360, 19313, 35025]
+
+    # N_700_K_15.remove(np.array(N_700_K_15).max())
+    # N_700_K_16.remove(np.array(N_700_K_16).max())
+    # N_700_K_17.remove(np.array(N_700_K_17).max())
+    # N_700_K_18.remove(np.array(N_700_K_18).max())
+    # N_700_K_20.remove(np.array(N_700_K_20).max())
+    # N_700_K_22.remove(np.array(N_700_K_22).max())
+
+    # N_1000_K_16.remove(np.array(N_1000_K_16).max())
+    # N_1000_K_17.remove(np.array(N_1000_K_17).max())
+    # N_1000_K_18.remove(np.array(N_1000_K_18).max())
+    # N_1000_K_19.remove(np.array(N_1000_K_19).max())
+    # N_1000_K_20.remove(np.array(N_1000_K_20).max())
+    # N_1000_K_21.remove(np.array(N_1000_K_21).max())
+    # N_1000_K_23.remove(np.array(N_1000_K_23).max())
+    # N_1000_K_25.remove(np.array(N_1000_K_25).max())
+
+    # N_2000_K_22.remove(np.array(N_2000_K_22).max())
+    # N_2000_K_25.remove(np.array(N_2000_K_25).max())
+    # N_2000_K_26.remove(np.array(N_2000_K_26).max())
+    # N_2000_K_27.remove(np.array(N_2000_K_27).max())
+    # N_2000_K_28.remove(np.array(N_2000_K_28).max())
+
+    K_tildes_N700 = [round(K / np.log2(700), 2)
+                     for K in [15, 16, 17, 18, 20, 22]]
+    K_tildes_N1000 = [round(K / np.log2(1000), 2)
+                      for K in [16, 17, 18, 19, 20, 21, 23, 25]]
+    K_tildes_N2000 = [round(K / np.log2(2000), 2)
+                      for K in [20, 22, 25, 26, 27, 28]]
+
+    N_700 = np.array([N_700_K_15, N_700_K_16, N_700_K_17,
+                     N_700_K_18, N_700_K_20, N_700_K_22])
+    N_1000 = np.array(
+        [N_1000_K_16, N_1000_K_17, N_1000_K_18, N_1000_K_19, N_1000_K_20, N_1000_K_21, N_1000_K_23, N_1000_K_25])
+    N_2000 = np.array(
+        [N_2000_K_20, N_2000_K_22, N_2000_K_25, N_2000_K_26, N_2000_K_27, N_2000_K_28])
+
+    means_700 = N_700.mean(axis=1)
+    means_1000 = N_1000.mean(axis=1)
+    means_2000 = N_2000.mean(axis=1)
+
+    if with_interp_line:
+        def power_law(x, a):
+            return a / np.power(x - np.ones(len(x)) * 1.595, 1.94)
+        pars, cov = curve_fit(f=power_law, xdata=np.array(
+            K_tildes_N2000), ydata=means_2000, p0=[0], bounds=(-np.inf, np.inf))
+        print("b=", pars[0])
+
+    def f(x, N):
+        return (1 / (pars[0] * N**5.78)) * x
+
+    std_700 = f(N_700, 700).std(axis=1)
+    std_1000 = f(N_1000, 1000).std(axis=1)
+    std_2000 = f(N_2000, 2000).std(axis=1)
+
+    color_index = 0
+    if with_interp_line:
+        color_index = 1
+
+    if log_y:
+        plt.yscale("log")
+
+    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(K_tildes_N700) - 1.55 * np.ones(len(K_tildes_N700)), f(means_700, 700),
+                                                      yerr=std_700, fmt=f"x", color=PLOTS_COLORS[color_index], ecolor=PLOTS_COLORS[color_index], capsize=3, lolims=True)
+    caplines1[0].set_marker("_")
+    plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(K_tildes_N1000) - 1.55 * np.ones(len(K_tildes_N1000)), f(means_1000, 1000),
+                                                      yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3, lolims=True)
+    caplines2[0].set_marker("_")
+    plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(K_tildes_N2000) - 1.55 * np.ones(len(K_tildes_N2000)), f(means_2000, 2000),
+                                                      yerr=std_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=True)
+    # plotline4, caplines4, barlinecols4 = plt.errorbar(np.array(K_tildes_N2000), means_2000 - std_2000,
+    #                                                   yerr=None, fmt=f"x", color="red", ecolor="red", capsize=3)
+    caplines3[0].set_marker("_")
+
+    # if with_interp_line:
+    #     interp_x = np.linspace(
+    #         1.76 - 1.55, round(K_tildes_N2000[-1] * 1.1 - 1.55, 2), 10000)
+    #     interp_line = plt.plot(interp_x, power_law(
+    #         interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
+
+    label = f"K_tilde (each point is over {n_samples} samples, except for N=2000 and K_tilde={K_tildes_N2000[0]} with 1 sample)"
+    plt.xlabel(label)
+    plt.ylabel("Number of PT steps needed")
+    plt.ylim(top=10**(-15))
+    plt.ylim(bottom=10**(-20))
+    if with_interp_line:
+        plt.legend([plotline1, plotline2, plotline3], [
+            "N = 700", "N = 1000", "N = 2000"])
     else:
         plt.legend([plotline1, plotline2, plotline3], [
             "N = 700", "N = 1000", "N = 2000"])
@@ -1460,9 +1587,16 @@ if __name__ == '__main__':
     # createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False)
     # createPlotTimeOfConvergence_N700_to_N5000_sqrt(log_y=False)
     # createPlotTimeOfConvergenceChangingK_N_700_2000(
-    #     log_y=False, with_interp_line=True)
+    #     log_y=True, with_interp_line=True)
+    # createPlotTimeOfConvergenceChangingK_N_700_2000_collapsed(
+    #     log_y=True, with_interp_line=True)
     # createPlotAcceptanceMetropolis_K_BP_N_700_5000()
     # createPlotAcceptanceMetropolis_Ks_N_1000()
     # ===============================
 
+    Ns = [4000, 5000, 3000]
+    K_tildes = [[38.0 / np.log2(4000)],
+                [42.0 / np.log2(5000)], [31.0 / np.log2(3000)]]
+    timeOfConvergenceChangingK(
+        Ns, K_tildes, n_samples=4, send_result_email=True)
     pass
