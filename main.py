@@ -106,6 +106,8 @@ def drawCandidate(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove
     Return
     return a candidate (np array with entries 0 or 1), and an integer representing the order of the number of operations needed to compute the common neighbors of the current clique (0 if method is switch_standard)
     """
+    if method == "paper":
+        return drawCandidatePaper(x, N, K, A, "switch_all", p, k, param_remove, beta, A_neighbors, nodes_probabilities)
     x_candidate = np.copy(x)
     time_complexity = 0
     if method in ["switch_standard", "switch_k", "switch_k_add", "switch_all"]:
@@ -316,7 +318,6 @@ def drawCandidatePaper(x, N, K, A, method="switch_all", p=0.5, k=1, param_remove
                 if A[i, j] != 1:
                     make_a_clique = False
                     break
-            # if len([j for j in estimate_indices if A[i, j] != 1]) == 0:
             if make_a_clique:
                 x_candidate[i] = 1
                 estimate_indices.append(i)
@@ -507,7 +508,7 @@ def get_coordinates_in_circle(n):
     return returnlist
 
 
-def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecutive", "reverse": False}, A_neighbors=None, with_threading=True, nodes_probabilities=[], show_graph=False, v_indices=[], init_near_solution=False):
+def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecutive", "reverse": False}, A_neighbors=None, with_threading=True, nodes_probabilities=[], show_graph=False, v_indices=[], init_near_solution=False, fast=False):
     """
     Perform the parallel tempering method with Metropolis Hastings steps
 
@@ -606,7 +607,9 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
     while control < limit and size_estimate_clique < K:
         # perform Metropolis on all replicas
         draw_method = "switch_all"
-        if control % 2 == 0:
+        if not fast:
+            draw_method = "paper"
+        elif control % 2 == 0:
             draw_method = "switch_k"
         estimates, energies, new_monitoring_metropolis, step_avg_time_complexity = performMetropolisOnAllReplicas(
             estimates, betas, A, N, K, n_steps, log_K_over_N, log_1_minus_K_over_N, N_count_constant, A_neighbors=A_neighbors, with_threading=with_threading, nodes_probabilities=nodes_probabilities, draw_method=draw_method)
