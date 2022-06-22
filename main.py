@@ -916,7 +916,7 @@ def timeOfConvergenceChangingK(Ns, K_tildes, n_samples=1, accept_other_clique=Fa
                 nodes_probabilities[-1] = 1.0 - \
                     np.array(nodes_probabilities[:-1]).sum()
                 estimate, monitoring_metropolis, monitoring_tempering, time_res = parallelTempering(
-                    A, N, K, betas, n_steps, A_neighbors=A_neighbors, nodes_probabilities=nodes_probabilities)
+                    A, N, K, betas, n_steps, A_neighbors=A_neighbors, nodes_probabilities=nodes_probabilities, fast=True)
                 estimate_indices = [i for i in range(N) if estimate[i] == 1]
                 diff_not_in_truth = [
                     i for i in estimate_indices if i not in truth]
@@ -1159,8 +1159,8 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
     N_1000_K_23 = [3381, 318, 16043, 5878, 5059, 3154, 1659, 5193]
     N_1000_K_25 = [5965, 4153, 1977, 2215, 957, 383, 869, 4333]
 
-    N_2000_K_20 = [392101, 392101, 392101,
-                   392101, 392101, 392101, 392101, 392101]
+    N_2000_K_20 = [392101, 1483411, 392101,
+                   1483411, 392101, 1483411, 392101, 1483411]
     N_2000_K_22 = [211353, 233457, 413185,
                    154133, 375989, 238615, 28637, 283873]
     N_2000_K_25 = [135955, 22961, 9213, 121483, 151031, 10047, 3539, 23223]

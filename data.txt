@@ -932,6 +932,9 @@ K_tilde 1.8238549547225846
 Average degree: 1000.056
 Progress: |████████████████████| 100.0% of the clique size (step #392101, beta config flips: 1412528, accept: | 1.0: 6.3%, 0.55: 22.6%, 0.1: 87.3%)
 Clique 1 recovered (N: 2000, K_tilde: 1.8238549547225846)
+Average degree: 1000.575
+Progress: |████████████████████| 100.0% of the clique size (step #1483411, beta config flips: 5492073, accept: | 1.0: 5.1%, 0.55: 21.3%, 0.1: 87.0%)
+Clique 2 recovered (N: 2000, K_tilde: 1.8238549547225846)
 
 _______________________
 ===================== START sampling =====================
