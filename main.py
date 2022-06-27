@@ -11,8 +11,8 @@ from scipy.optimize import curve_fit
 
 """
 This script can be used to apply the Parallel Tempering algorithm to the planted clique problem.
-Many references are made to the paper of Angelini Maria Chiara:
-@article{Maria_Chiara_2018,
+Many references are made to the paper of Maria Chiara Angelini:
+@article{Maria_Chiara_Angelini_2018,
 	doi = {10.1088/1742-5468/aace2c},
 	url = {https://doi.org/10.1088%2F1742-5468%2Faace2c},
 	year = 2018,
@@ -25,7 +25,7 @@ Many references are made to the paper of Angelini Maria Chiara:
 	title = {Parallel tempering for the planted clique problem},
 	journal = {Journal of Statistical Mechanics: Theory and Experiment}
 }
-The results obtained are agreggated in the files: data_list.txt, acceptance_list.txt, dataMariaChiara.txt (results from the paper of Maria Chiara).
+The results obtained are agreggated in the files: data_list.txt, acceptance_list.txt, dataAngelini.txt (results from the paper of Angelini).
 """
 
 
@@ -294,7 +294,7 @@ def drawCandidate(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove
 def drawCandidatePaper(x, N, K, A, method="switch_all", p=0.5, k=1, param_remove=0.5, beta=-1.0, A_neighbors=None, nodes_probabilities=[]):
     """
     Ensure that all inserted elements are linked to the other elements of the current clique
-    Draw a candidate as in the paper of Angelini Maria Chiara
+    Draw a candidate as in the paper of Maria Chiara Angelini
 
     Parameters
     x: current estimate
@@ -548,7 +548,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
     create_plots: whether to create a visual representation of the evolution of the search (it requires v_indices)
     v_indices: the indices of the nodes of the planted clique (only for init_near_solution or create_plots options)
     init_near_solution: whether to init the estimate near the solution or not (if True initialize the estimate with 0.33 * K correct nodes)
-    fast: boolean, whether to use the draw candidate method as in the paper of Angelini Maria Chiara (False), or our own method (True)
+    fast: boolean, whether to use the draw candidate method as in the paper of Maria Chiara Angelini (False), or our own method (True)
 
     Return:
     x, monitoring_metropolis, monitoring_tempering, iterations
@@ -999,7 +999,7 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False):
     """
     Plot the evolution of the time of convergence changing N (for K = K_BP)
     Parameters:
-        compare: whether to display the data of the paper of Maria Chiara or not
+        compare: whether to display the data of the paper of Maria Chiara Angelini or not
     """
     index_color = 2
     n_samples = 12
@@ -1078,10 +1078,10 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False):
     plt.ylabel("Number of PT steps needed")
     if compare:
         plt.legend([plotline1, plotline2, interp_line[0], interp_line_exp[0]], [
-            r"Start of hard phase $K_{BP} = \lfloor \sqrt{N/e} \rfloor$", "Maria Chiara results", rf"$a N^b$ with $b={round(pars[1], 2)}$", r"$a \cdot e^{b \cdot \log(N)^2}$" + rf" with $b={round(pars_exp[1], 2)}$"])
+            r"Average time of convergence for $K_{BP} = \lfloor \sqrt{N/e} \rfloor$", "Maria Chiara Angelini results", rf"$a N^b$ with $b={round(pars[1], 2)}$", r"$a \cdot e^{b \cdot \log(N)^2}$" + rf" with $b={round(pars_exp[1], 2)}$"])
     else:
         plt.legend([plotline1, interp_line[0], interp_line_exp[0]], [
-            r"Start of hard phase $K_{BP} = \lfloor \sqrt{N/e} \rfloor$", rf"$a N^b$ with $b={round(pars[1], 2)}$", r"$a \cdot e^{b \cdot \log(N)^2}$" + rf" with $b={round(pars_exp[1], 2)}$"])
+            r"Average time of convergence for $K_{BP} = \lfloor \sqrt{N/e} \rfloor$", rf"$a N^b$ with $b={round(pars[1], 2)}$", r"$a \cdot e^{b \cdot \log(N)^2}$" + rf" with $b={round(pars_exp[1], 2)}$"])
     print("CHISQ power:", round(chisq_power, 3))
     print("CHISQ exp:", round(chisq_exp, 3))
     plt.show()
@@ -1155,7 +1155,7 @@ def createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False):
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
     plt.legend([plotline1, interp_line[0], interp_line_exp[0]], [
-        r"Start of hard phase $K_{BP} - 2 = \lfloor \sqrt{N/e} \rfloor - 2$", rf"$a N^b$ with $b={round(pars[1], 2)}$", r"$a \cdot e^{b \cdot \log(N)^2}$" + rf" with $b={round(pars_exp[1], 2)}$"])
+        r"Average time of convergence for $K_{BP} - 2 = \lfloor \sqrt{N/e} \rfloor - 2$", rf"$a N^b$ with $b={round(pars[1], 2)}$", r"$a \cdot e^{b \cdot \log(N)^2}$" + rf" with $b={round(pars_exp[1], 2)}$"])
     print("CHISQ power:", round(chisq_power, 3))
     print("CHISQ exp:", round(chisq_exp, 3))
     plt.show()
@@ -1165,7 +1165,7 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
     """
     Plot the evolution of the time of convergence changing K (for N = 700, 1000, 2000)
     Parameters:
-        compare: whether to display the data of the paper of Maria Chiara or not
+        compare: whether to display the data of the paper of Maria Chiara Angelini or not
     """
     n_samples = 8
 
@@ -1228,7 +1228,7 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
                                                                    pars[0], pars[1])), np.reciprocal(std_2000)), 2).sum()
         print("CHISQ power:", round(chisq_power, 3))
 
-    # data paper of Maria Chiara
+    # data paper of Maria Chiara Angelini
     test_x = [1.64, 1.73, 1.82, 1.91, 2.00, 2.10,
               2.19, 2.28, 2.37, 2.46, 2.55, 2.65, 2.74]
     test_y = [12850230, 5465423, 1893336, 655891, 420496,
@@ -1271,10 +1271,10 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
     if compare:
         if with_interp_line:
             plt.legend([plotline1, plotline2, plotline3, plotline4, interp_line[0]], [
-                r"$N = 700$", r"$N = 1000$", r"$N = 2000$", r"$N = 2000 (Maria Chiara)$", r"$\frac{b}{(\tilde{K} - \tilde{K}_s)^a}$ " + rf"with $a={round(pars[0], 2)}$"])
+                r"$N = 700$", r"$N = 1000$", r"$N = 2000$", r"$N = 2000 (Angelini)$", r"$\frac{b}{(\tilde{K} - \tilde{K}_s)^a}$ " + rf"with $a={round(pars[0], 2)}$"])
         else:
             plt.legend([plotline1, plotline2, plotline3, plotline4], [
-                r"$N = 700$", r"$N = 1000$", r"$N = 2000$", r"$N = 2000 (Maria Chiara)$"])
+                r"$N = 700$", r"$N = 1000$", r"$N = 2000$", r"$N = 2000 (Angelini)$"])
     else:
         if with_interp_line:
             plt.legend([plotline1, plotline2, plotline3, interp_line[0]], [
@@ -1500,11 +1500,11 @@ if __name__ == '__main__':
     # ===============================
     # Create plots from data
 
-    # # Plot the evolution of the time of convergence changing N (for K = K_BP)
-    # createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False)
+    # Plot the evolution of the time of convergence changing N (for K = K_BP)
+    createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False)
 
-    # # Plot the evolution of the time of convergence changing N (for K = K_BP - 2)
-    # createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False)
+    # Plot the evolution of the time of convergence changing N (for K = K_BP - 2)
+    createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False)
 
     # # Plot the evolution of the time of convergence changing K (for N = 700, 1000, 2000)
     # createPlotTimeOfConvergenceChangingK_N_700_2000(
