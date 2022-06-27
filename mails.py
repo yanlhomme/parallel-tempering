@@ -7,7 +7,7 @@ from email import encoders
 
 def send_email(to, subject, content, attachment_filename_with_extension, pwd):
     """return True if sent, False if error"""
-    email_sender = 'yan-lhomme@outlook.com'
+    email_sender = 'email'
     email_recipient = to
     msg = MIMEMultipart()
     msg['From'] = email_sender

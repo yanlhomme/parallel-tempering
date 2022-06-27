@@ -1,0 +1,10 @@
+Changing N, K = K_BP
+CHISQ power: 0.297
+CHISQ exp: 0.336
+
+Changing N, K = K_BP - 2
+CHISQ power: 3.063
+CHISQ exp: 3.116
+
+Changing K hard phase:
+CHISQ power: 0.381

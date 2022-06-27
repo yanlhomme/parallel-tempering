@@ -8,6 +8,27 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from scipy.optimize import curve_fit
 
+
+"""
+This script can be used to apply the Parallel Tempering algorithm to the planted clique problem.
+Many references are made to the paper of Angelini Maria Chiara:
+@article{Maria_Chiara_2018,
+	doi = {10.1088/1742-5468/aace2c},
+	url = {https://doi.org/10.1088%2F1742-5468%2Faace2c},
+	year = 2018,
+	month = {7},
+	publisher = {{IOP} Publishing},
+	volume = {2018},
+	number = {7},
+	pages = {073404},
+	author = {Angelini Maria Chiara},
+	title = {Parallel tempering for the planted clique problem},
+	journal = {Journal of Statistical Mechanics: Theory and Experiment}
+}
+The results obtained are agreggated in the files: data_list.txt, acceptance_list.txt, dataMariaChiara.txt (results from the paper of Maria Chiara).
+"""
+
+
 LOG_1_HALF = np.log(0.5)
 
 
@@ -273,13 +294,16 @@ def drawCandidate(x, N, K, A, method="switch_standard", p=0.5, k=1, param_remove
 def drawCandidatePaper(x, N, K, A, method="switch_all", p=0.5, k=1, param_remove=0.5, beta=-1.0, A_neighbors=None, nodes_probabilities=[]):
     """
     Ensure that all inserted elements are linked to the other elements of the current clique
-    Candidate elements (to be added) are chosen among the common neighbors of the current elements of the clique
+    Draw a candidate as in the paper of Angelini Maria Chiara
 
     Parameters
     x: current estimate
     N, K, A: graphs variables
     methods:
-        switch_all: switch each element with probability min(1, exp(beta * (log(1-K/N) - log(K/N) + (size of the previous estimated clique)*log(1/2)))) for elements of the previous estimate, probability min(1, exp(-beta * (log(1-K/N) - log(K/N) + (size of the previous estimated clique)*log(1/2)))) for non-elements of the previous estimate (and if the resulting estimate forms a clique)
+        switch_all: switch each element with probability
+            min(1, exp(beta * (log(K/N) - log(1-K/N) - (size of the previous estimated clique - 1)*log(1/2)))) for elements of the previous estimate,
+            min(1, exp(-beta * (log(1-K/N) - log(K/N) + (size of the previous estimated clique)*log(1/2)))) for non-elements of the previous estimate
+            (and if the resulting estimate forms a clique)
     beta: inverse temperature
     Not used parameters:
     p: (only for switch_k method) the probability of switch acceptance
@@ -298,8 +322,8 @@ def drawCandidatePaper(x, N, K, A, method="switch_all", p=0.5, k=1, param_remove
         m = len(estimate_indices)
         p_accept = min(1, np.exp(-beta * (np.log(1 - float(K) / N) -
                                           np.log(float(K) / N) + m * LOG_1_HALF)))
-        p_remove_accept = min(1, np.exp(beta * (np.log(1 - float(K) / N) -
-                                                np.log(float(K) / N) + m * LOG_1_HALF)))
+        p_remove_accept = min(1, np.exp(beta * (np.log(float(K) / N) -
+                                                np.log(1 - float(K) / N) - max(m - 1, 0) * LOG_1_HALF)))
         number_accepted = np.random.binomial(
             N - len(estimate_indices), p_accept)
         switch_accepted = np.random.choice(
@@ -344,7 +368,7 @@ def metropolisHastings(A, N, K, x_init, n_steps, log_K_over_N, log_1_minus_K_ove
     if with_time_complexity is True: return also the order of the # of operations needed in the drawCandidate method
     """
     # the method used in the drawCandidate function
-    candidate_method = "switch_all"  # "switch_k"
+    candidate_method = "switch_all"
     if len(draw_method) > 0:
         candidate_method = draw_method
     param_k = getParam_k(N, K)
@@ -507,7 +531,7 @@ def get_coordinates_in_circle(n):
     return returnlist
 
 
-def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecutive", "reverse": False}, A_neighbors=None, with_threading=True, nodes_probabilities=[], show_graph=False, v_indices=[], init_near_solution=False, fast=False):
+def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecutive", "reverse": False}, A_neighbors=None, with_threading=True, nodes_probabilities=[], create_plots=False, v_indices=[], init_near_solution=False, fast=False):
     """
     Perform the parallel tempering method with Metropolis Hastings steps
 
@@ -521,9 +545,10 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
     A_neighbors: list of list of neighbors for each node of the graph
     with_threading: whether to perform the Metropolis steps in parallel for each replica or not
     nodes_probabilities: list of probabilities for each node (number of neighbors / (2 * total number of edges))
-    show_graph: whether to create a visual representation of the evolution of the search (it requires v_indices)
-    v_indices: the indices of the nodes of the planted clique (only for init_near_solution or show_graph options)
+    create_plots: whether to create a visual representation of the evolution of the search (it requires v_indices)
+    v_indices: the indices of the nodes of the planted clique (only for init_near_solution or create_plots options)
     init_near_solution: whether to init the estimate near the solution or not (if True initialize the estimate with 0.33 * K correct nodes)
+    fast: boolean, whether to use the draw candidate method as in the paper of Angelini Maria Chiara (False), or our own method (True)
 
     Return:
     x, monitoring_metropolis, monitoring_tempering, iterations
@@ -569,9 +594,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
 
     avg_time_complexity = 0
 
-    # threshold = 1.05 * np.log2(N) / K
-
-    if show_graph:
+    if create_plots:
         # create a plot with visual representations of the search in the graph for each replica
         # the plots will be saved in the folder "plots/"
         figure, axis = plt.subplots(2, ceil(len(betas) * 0.5))
@@ -618,7 +641,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
 
         avg_time_complexity += step_avg_time_complexity
 
-        if show_graph:
+        if create_plots:
             # visualization of the search before switching the configurations
             for j, b in enumerate(estimates):
                 row, col = 0, j
@@ -641,7 +664,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
         # size of the current estimated clique
         size_estimate_clique = estimates[0].sum()
 
-        if show_graph:
+        if create_plots:
             # visualization of the search after switching the configurations
             for j, b in enumerate(estimates):
                 row, col = 0, j
@@ -682,7 +705,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
     return estimates[0], monitoring_metropolis, {"switchCount": current_number_changes_temp, "switchCountBeta1": current_number_changes_temp_beta_1}, {"iterations": control, "time": (stop - start).seconds, "avgTimeComplexity": avg_time_complexity}
 
 
-def testParallelTempering(N, K, betas=[], n_steps=5, show_graph=False):
+def testParallelTempering(N, K, betas=[], n_steps=5, create_plots=False):
     """
     Test the parallel tempering algorithm
     """
@@ -704,10 +727,10 @@ def testParallelTempering(N, K, betas=[], n_steps=5, show_graph=False):
 
     # run PT and compute elapsed time
     v_indices = []
-    if show_graph:
+    if create_plots:
         v_indices = truth
     estimate, monitoring_metropolis, monitoring_tempering, time_result = parallelTempering(
-        A, N, K, betas, n_steps, A_neighbors=A_neighbors, with_threading=True, show_graph=show_graph, v_indices=v_indices)
+        A, N, K, betas, n_steps, A_neighbors=A_neighbors, with_threading=True, create_plots=create_plots, v_indices=v_indices)
 
     # result compared to actual clique
     estimate_indices = [i for i in range(N) if estimate[i] == 1]
@@ -752,7 +775,7 @@ def testParallelTempering(N, K, betas=[], n_steps=5, show_graph=False):
 
 def getKFromKTilde(N, K_tilde):
     """
-    Return the size of the clique for a given K_tilde
+    Return the size of the clique for a given K_tilde = K / log_2(N)
     """
     return max(1, round(K_tilde * np.log2(N)))
 
@@ -798,9 +821,9 @@ def timeOfConvergenceChangingN(Ns, n_samples, K_as_list=[], K_tilde=-1, K_to_N_f
     K_tilde: if K_as_list = [] then compute the size of the planted clique as K_tilde * log_2(N) 
     K_as_list: if non empty then compute the size of the planted clique as K_as_list[i] for i in range(len(Ns))
     """
-    pwd = ""
-    if send_result_email:
-        pwd = input("Input password and press Enter: ")
+    # pwd = ""
+    # if send_result_email:
+    #     pwd = input("Input password and press Enter: ")
     results = [[] for _ in range(len(
         Ns))]  # save the results (number of PT iterations needed to recover the planted clique)
     betas = [1 - i * 0.15 for i in range(7)]  # default betas
@@ -830,7 +853,7 @@ def timeOfConvergenceChangingN(Ns, n_samples, K_as_list=[], K_tilde=-1, K_to_N_f
             nodes_probabilities[-1] = 1.0 - \
                 np.array(nodes_probabilities[:-1]).sum()
             estimate, monitoring_metropolis, monitoring_tempering, time_res = parallelTempering(
-                A, N, K, betas, n_steps, A_neighbors=A_neighbors, nodes_probabilities=nodes_probabilities)
+                A, N, K, betas, n_steps, A_neighbors=A_neighbors, nodes_probabilities=nodes_probabilities, fast=True)
             estimate_indices = [i for i in range(N) if estimate[i] == 1]
             diff_not_in_truth = [
                 i for i in estimate_indices if i not in truth]
@@ -872,10 +895,11 @@ def timeOfConvergenceChangingN(Ns, n_samples, K_as_list=[], K_tilde=-1, K_to_N_f
             np.save(f, np.array([0, K_to_N_factor]))
     print(
         "Saved:", f"final_results_time_of_convergence_changing_N_from_{Ns[0]}_to_{Ns[-1]}_{n_samples}samples_{filename_suffix}.npy")
-    if send_result_email:
-        status = send_email("yan-lhomme@outlook.com", "Results time of convergence",
-                            f"final_results_time_of_convergence_changing_N_from_{Ns[0]}_to_{Ns[-1]}_{n_samples}samples_{filename_suffix}.npy", pwd)
-        print("Sent email:", status)
+    # if send_result_email:
+    #     status = send_email("email", "Results time of convergence",
+    #                         f"final_results_time_of_convergence_changing_N_from_{Ns[0]}_to_{Ns[-1]}_{n_samples}samples_{filename_suffix}.npy", pwd)
+    #     print("Sent email:", status)
+    print("Finished")
 
 
 def timeOfConvergenceChangingK(Ns, K_tildes, n_samples=1, accept_other_clique=False, send_result_email=False):
@@ -887,9 +911,9 @@ def timeOfConvergenceChangingK(Ns, K_tildes, n_samples=1, accept_other_clique=Fa
     K_tildes: list of list of K_tilde values
     n_samples: number of samples for each K_tilde
     """
-    pwd = ""
-    if send_result_email:
-        pwd = input("Input password and press Enter: ")
+    # pwd = ""
+    # if send_result_email:
+    #     pwd = input("Input password and press Enter: ")
     results = []
     betas = [1 - i * 0.15 for i in range(7)]
     n_steps = 5  # Metropolis steps
@@ -957,22 +981,30 @@ def timeOfConvergenceChangingK(Ns, K_tildes, n_samples=1, accept_other_clique=Fa
         np.save(f, np.array(K_tildes))
     print(
         "Saved:", f"final_results_time_of_convergence_changing_N_multipleK_from_{Ns[0]}_to_{Ns[-1]}_{n_samples}samples_{filename_suffix}.npy")
-    if send_result_email:
-        status = send_email("yan-lhomme@outlook.com", "Results time of convergence",
-                            f"final_results_time_of_convergence_changing_N_multipleK_from_{Ns[0]}_to_{Ns[-1]}_{n_samples}samples_{filename_suffix}.npy", pwd)
-        print("Sent email:", status)
+    # if send_result_email:
+    #     status = send_email("email", "Results time of convergence",
+    #                         f"final_results_time_of_convergence_changing_N_multipleK_from_{Ns[0]}_to_{Ns[-1]}_{n_samples}samples_{filename_suffix}.npy", pwd)
+    #     print("Sent email:", status)
+    print("Finished")
 
 
 # Plots
 
-
+# colors for the different plots
 PLOTS_COLORS = ["darkblue", "blue", "dodgerblue",
                 "royalblue", "steelblue", "skyblue", "lightblue"]
 
 
-def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False):
+def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False):
+    """
+    Plot the evolution of the time of convergence changing N (for K = K_BP)
+    Parameters:
+        compare: whether to display the data of the paper of Maria Chiara or not
+    """
     index_color = 2
     n_samples = 12
+
+    # data
     Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000, 4000, 5000]
     N_700_K_16_2 = [7241, 5631, 5891, 499]
     N_700_K_16 = [1817, 6621, 2221, 13483,
@@ -991,7 +1023,9 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False):
     N_3000_K_33_2 = [55451, 329497, 217849, 100373]
     N_3000_K_33 = [79673, 75225, 63127, 37781,
                    93621, 6501, 56727, 55451, *N_3000_K_33_2]
-    N_4000_K_38 = [16929, 237699, 44755, 41333, 83531, 82023, 304713, 96773]
+    N_4000_K_38_2 = [278681, 347765]
+    N_4000_K_38 = [16929, 237699, 44755, 41333,
+                   83531, 82023, 304713, 96773, *N_4000_K_38_2]
     N_5000_K_42 = [41273, 371025, 162027, 94849, 298315, 39507]
     results = np.array(
         [N_700_K_16, N_800_K_17, N_900_K_18, N_1000_K_19, N_2000_K_27, N_3000_K_33])
@@ -1000,40 +1034,67 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False):
     results_std_dev = np.array(
         [*list(results.std(axis=1)), np.array(N_4000_K_38).std(), np.array(N_5000_K_42).std()])
 
+    # fits
     def power_law(x, a, b):
         return a*np.power(x, b)
     pars, cov = curve_fit(f=power_law, xdata=np.array(
-        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
+        Ns_K_BPs), ydata=results_mean, sigma=results_std_dev, absolute_sigma=True, p0=[0, 0], bounds=(-np.inf, np.inf))
+    chisq_power = np.power(np.multiply((results_mean - power_law(np.array(Ns_K_BPs),
+                                                                 pars[0], pars[1])), np.reciprocal(results_std_dev)), 2).sum()
 
     def exp_law(x, a, b):
-        return a*np.exp(b * np.log(x)**2)
+        return a*np.exp(b * np.power(np.log(x), 2))
     pars_exp, cov_exp = curve_fit(f=exp_law, xdata=np.array(
-        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
+        Ns_K_BPs), ydata=results_mean, sigma=results_std_dev, absolute_sigma=True, p0=[0, 0], bounds=(-np.inf, np.inf))
+    chisq_exp = np.power(np.multiply((results_mean - exp_law(np.array(Ns_K_BPs),
+                                                             pars_exp[0], pars_exp[1])), np.reciprocal(results_std_dev)), 2).sum()
+
+    # plot
+    plt.figure(figsize=(8.3, 5.1))
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
-                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
-    caplines1[0].set_marker("_")
+                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3)
 
     interp_x = np.linspace(Ns_K_BPs[0] - 100, Ns_K_BPs[-1] + 100, 10000)
-    interp_line = plt.plot(interp_x, power_law(
-        interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
-
     interp_line_exp = plt.plot(interp_x, exp_law(
-        interp_x, pars_exp[0], pars_exp[1]), color=PLOTS_COLORS[-1])
+        interp_x, pars_exp[0], pars_exp[1]), color=PLOTS_COLORS[-1], linewidth=1)
+    interp_line = plt.plot(interp_x, power_law(
+        interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0], linewidth=1)
 
+    chiara_x = [2000, 3000, 4000, 5000]
+    chiara_mean = [81450, 136039, 278962, 678708]
+    chiara_high = [100000, 161406, 330980, 833282]
+    chiara_std = np.array(chiara_high) - np.array(chiara_mean)
+    if compare:
+        plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(chiara_x), np.array(chiara_mean),
+                                                          yerr=chiara_std, fmt=f"x", color="red", ecolor="red", capsize=3)
+
+    # format
     if log_y:
         plt.yscale("log")
-    label = f"N (each point is over {n_samples} samples for N <= 3000, 8 samples for N=4000, 6 samples for N=5000)"
+    # label = f"N (each point is over {n_samples} samples for N <= 3000, 10 samples for N=4000, 6 samples for N=5000)"
+    label = "N (size of the graph)"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
-    plt.legend([plotline1, interp_line[0], interp_line_exp[0]], [
-               "Start of hard phase (K_BP = floor(sqrt(N/e)))", f"a * N^b with b={round(pars[1], 2)}", f"a * exp(b * N) with b={round(pars_exp[1], 2)}"])
+    if compare:
+        plt.legend([plotline1, plotline2, interp_line[0], interp_line_exp[0]], [
+            r"Start of hard phase $K_{BP} = \lfloor \sqrt{N/e} \rfloor$", "Maria Chiara results", rf"$a N^b$ with $b={round(pars[1], 2)}$", r"$a \cdot e^{b \cdot \log(N)^2}$" + rf" with $b={round(pars_exp[1], 2)}$"])
+    else:
+        plt.legend([plotline1, interp_line[0], interp_line_exp[0]], [
+            r"Start of hard phase $K_{BP} = \lfloor \sqrt{N/e} \rfloor$", rf"$a N^b$ with $b={round(pars[1], 2)}$", r"$a \cdot e^{b \cdot \log(N)^2}$" + rf" with $b={round(pars_exp[1], 2)}$"])
+    print("CHISQ power:", round(chisq_power, 3))
+    print("CHISQ exp:", round(chisq_exp, 3))
     plt.show()
 
 
 def createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False):
+    """
+    Plot the evolution of the time of convergence changing N (for K = K_BP - 2)
+    """
     index_color = 2
     n_samples = 12
+
+    # data
     Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000]
     N_700_K_14_2 = [3191, 107, 1664, 1886]
     N_700_K_14 = [629, 318, 521, 389, 6049, 4384, 201, 3977, *N_700_K_14_2]
@@ -1058,19 +1119,26 @@ def createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False):
     results_std_dev = np.array(
         [*list(results.std(axis=1)), np.array(N_3000_K_31).std()])
 
+    # fits
     def power_law(x, a, b):
         return a*np.power(x, b)
     pars, cov = curve_fit(f=power_law, xdata=np.array(
-        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
+        Ns_K_BPs), ydata=results_mean, sigma=results_std_dev, absolute_sigma=True, p0=[0, 0], bounds=(-np.inf, np.inf))
+    chisq_power = np.power(np.multiply((results_mean - power_law(np.array(Ns_K_BPs),
+                                                                 pars[0], pars[1])), np.reciprocal(results_std_dev)), 2).sum()
 
     def exp_law(x, a, b):
         return a*np.exp(b * np.log(x)**2)
     pars_exp, cov_exp = curve_fit(f=exp_law, xdata=np.array(
-        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
+        Ns_K_BPs), ydata=results_mean, sigma=results_std_dev, absolute_sigma=True, p0=[0, 0], bounds=(-np.inf, np.inf))
+    chisq_exp = np.power(np.multiply((results_mean - exp_law(np.array(Ns_K_BPs),
+                                                             pars_exp[0], pars_exp[1])), np.reciprocal(results_std_dev)), 2).sum()
+
+    # plot
+    plt.figure(figsize=(8.3, 5.1))
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
-                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
-    caplines1[0].set_marker("_")
+                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3)
 
     interp_x = np.linspace(Ns_K_BPs[0] - 100, Ns_K_BPs[-1] + 100, 10000)
     interp_line = plt.plot(interp_x, power_law(
@@ -1079,70 +1147,29 @@ def createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False):
     interp_line_exp = plt.plot(interp_x, exp_law(
         interp_x, pars_exp[0], pars_exp[1]), color=PLOTS_COLORS[-1])
 
+    # format
     if log_y:
         plt.yscale("log")
-    label = f"N (each point is over {n_samples} samples, 8 samples for N=3000)"
+    # label = f"N (each point is over {n_samples} samples, 8 samples for N=3000)"
+    label = "N (size of the graph)"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
     plt.legend([plotline1, interp_line[0], interp_line_exp[0]], [
-               "Hard phase (K_BP - 2 = floor(sqrt(N/e))) - 2", f"a * N^b with b={round(pars[1], 2)}", f"a * exp(b * N) with b={round(pars_exp[1], 2)}"])
+        r"Start of hard phase $K_{BP} - 2 = \lfloor \sqrt{N/e} \rfloor - 2$", rf"$a N^b$ with $b={round(pars[1], 2)}$", r"$a \cdot e^{b \cdot \log(N)^2}$" + rf" with $b={round(pars_exp[1], 2)}$"])
+    print("CHISQ power:", round(chisq_power, 3))
+    print("CHISQ exp:", round(chisq_exp, 3))
     plt.show()
 
 
-def createPlotTimeOfConvergence_N700_to_N5000_sqrt(log_y=False):
-    # to compare for N^(0.5-eps): use Ns [700, 1000, 2000, 3000, 4000] for eps=0.062 and Ks [18, 21, 28, 33, 38] (event. 5000, with K 42)
-    index_color = 2
-    n_samples = 8
-    Ns_K_BPs = [700, 1000, 2000, 3000, 4000, 5000]
-    N_700_K_18 = [5067, 473, 3716, 9975, 7245, 10883, 111, 289]
-    N_1000_K_21 = [7633, 1875, 1075, 67, 617, 2237, 4455, 445]
-    N_2000_K_28 = [116675, 140219, 6543, 4199, 51285, 75360, 19313, 35025]
-    N_3000_K_33 = [79673, 75225, 63127, 37781, 93621, 6501, 56727, 55451]
-    N_4000_K_38 = [16929, 237699, 44755, 41333, 83531, 82023, 304713, 96773]
-    N_5000_K_42 = [41273, 371025, 162027, 94849, 298315, 39507]  # warning
-    t = np.array(N_5000_K_42).mean()
-    s = np.array(N_5000_K_42).std()
-    N_5000_K_42.append(t + s)
-    N_5000_K_42.append(t - s)
-    results = np.array(
-        [N_700_K_18, N_1000_K_21, N_2000_K_28, N_3000_K_33, N_4000_K_38, N_5000_K_42])
-    results_mean = results.mean(axis=1)
-    results_std_dev = results.std(axis=1)
-
-    def power_law(x, a, b):
-        return a*np.power(x, b)
-    pars, cov = curve_fit(f=power_law, xdata=np.array(
-        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
-
-    def exp_law(x, a, b):
-        return a*np.exp(b * np.log(x)**2)
-    pars_exp, cov_exp = curve_fit(f=exp_law, xdata=np.array(
-        Ns_K_BPs), ydata=results_mean, p0=[0, 0], bounds=(-np.inf, np.inf))
-
-    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
-                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, lolims=False)
-    caplines1[0].set_marker("_")
-
-    interp_x = np.linspace(Ns_K_BPs[0] - 100, Ns_K_BPs[-1] + 100, 10000)
-    interp_line = plt.plot(interp_x, power_law(
-        interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
-
-    interp_line_exp = plt.plot(interp_x, exp_law(
-        interp_x, pars_exp[0], pars_exp[1]), color=PLOTS_COLORS[-1])
-
-    if log_y:
-        plt.yscale("log")
-    label = f"N (each point is over {n_samples} samples, 6 samples for N=5000)"
-    plt.xlabel(label)
-    plt.ylabel("Number of PT steps needed")
-    plt.legend([plotline1, interp_line[0], interp_line_exp[0]], [
-               "K_tilde = round(N^(1/2 - eps)), eps=0.062", f"a * N^b with b={round(pars[1], 2)}", f"a * exp(b * N) with b={round(pars_exp[1], 2)}"])
-    plt.show()
-
-
-def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_line=False):
+def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_line=False, compare=False):
+    """
+    Plot the evolution of the time of convergence changing K (for N = 700, 1000, 2000)
+    Parameters:
+        compare: whether to display the data of the paper of Maria Chiara or not
+    """
     n_samples = 8
 
+    # data
     N_700_K_15 = [11809, 59827, 55941, 11920, 10235, 15500, 10445, 2237]
     N_700_K_16 = [1817, 6621, 2221, 13483, 8413, 5235, 36295, 3561]
     N_700_K_17 = [6925, 2797, 4968, 15381, 19810, 4542, 6408, 15007]
@@ -1159,36 +1186,13 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
     N_1000_K_23 = [3381, 318, 16043, 5878, 5059, 3154, 1659, 5193]
     N_1000_K_25 = [5965, 4153, 1977, 2215, 957, 383, 869, 4333]
 
-    N_2000_K_20 = [392101, 1483411, 392101,
-                   1483411, 392101, 1483411, 392101, 1483411]
+    N_2000_K_20 = [392101, 1483411, 815731, 922577, 60859]
     N_2000_K_22 = [211353, 233457, 413185,
                    154133, 375989, 238615, 28637, 283873]
     N_2000_K_25 = [135955, 22961, 9213, 121483, 151031, 10047, 3539, 23223]
     N_2000_K_26 = [87447, 17005, 45527, 12555, 51627, 293851, 112189, 87895]
     N_2000_K_27 = [10699, 78087, 7345, 36023, 28527, 8743, 134253, 39411]
     N_2000_K_28 = [116675, 140219, 6543, 4199, 51285, 75360, 19313, 35025]
-
-    # N_700_K_15.remove(np.array(N_700_K_15).max())
-    # N_700_K_16.remove(np.array(N_700_K_16).max())
-    # N_700_K_17.remove(np.array(N_700_K_17).max())
-    # N_700_K_18.remove(np.array(N_700_K_18).max())
-    # N_700_K_20.remove(np.array(N_700_K_20).max())
-    # N_700_K_22.remove(np.array(N_700_K_22).max())
-
-    # N_1000_K_16.remove(np.array(N_1000_K_16).max())
-    # N_1000_K_17.remove(np.array(N_1000_K_17).max())
-    # N_1000_K_18.remove(np.array(N_1000_K_18).max())
-    # N_1000_K_19.remove(np.array(N_1000_K_19).max())
-    # N_1000_K_20.remove(np.array(N_1000_K_20).max())
-    # N_1000_K_21.remove(np.array(N_1000_K_21).max())
-    # N_1000_K_23.remove(np.array(N_1000_K_23).max())
-    # N_1000_K_25.remove(np.array(N_1000_K_25).max())
-
-    # N_2000_K_22.remove(np.array(N_2000_K_22).max())
-    # N_2000_K_25.remove(np.array(N_2000_K_25).max())
-    # N_2000_K_26.remove(np.array(N_2000_K_26).max())
-    # N_2000_K_27.remove(np.array(N_2000_K_27).max())
-    # N_2000_K_28.remove(np.array(N_2000_K_28).max())
 
     K_tildes_N700 = [round(K / np.log2(700), 2)
                      for K in [15, 16, 17, 18, 20, 22]]
@@ -1202,181 +1206,90 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
     N_1000 = np.array(
         [N_1000_K_16, N_1000_K_17, N_1000_K_18, N_1000_K_19, N_1000_K_20, N_1000_K_21, N_1000_K_23, N_1000_K_25])
     N_2000 = np.array(
-        [N_2000_K_20, N_2000_K_22, N_2000_K_25, N_2000_K_26, N_2000_K_27, N_2000_K_28])
+        [N_2000_K_22, N_2000_K_25, N_2000_K_26, N_2000_K_27, N_2000_K_28])
 
     means_700 = N_700.mean(axis=1)
     means_1000 = N_1000.mean(axis=1)
-    means_2000 = N_2000.mean(axis=1)
+    means_2000 = np.array(
+        [np.array(N_2000_K_20).mean(), *list(N_2000.mean(axis=1))])
 
     std_700 = N_700.std(axis=1)
     std_1000 = N_1000.std(axis=1)
-    std_2000 = N_2000.std(axis=1)
+    std_2000 = np.array(
+        [np.array(N_2000_K_20).std(), *list(N_2000.std(axis=1))])
 
+    # fit
     if with_interp_line:
         def power_law(x, a, b):
-            return a*np.power(2000, 1.49) / np.power(x - np.ones(len(x)) * 1.595, b)
+            return b / np.power(x - np.ones(len(x)) * 1.595, a)
         pars, cov = curve_fit(f=power_law, xdata=np.array(
-            K_tildes_N2000), ydata=means_2000, p0=[0, 0], bounds=(-np.inf, np.inf))
+            K_tildes_N2000), ydata=means_2000, sigma=std_2000, absolute_sigma=True, p0=[0, 0], bounds=(-np.inf, np.inf))
+        chisq_power = np.power(np.multiply((means_2000 - power_law(np.array(K_tildes_N2000),
+                                                                   pars[0], pars[1])), np.reciprocal(std_2000)), 2).sum()
+        print("CHISQ power:", round(chisq_power, 3))
 
+    # data paper of Maria Chiara
+    test_x = [1.64, 1.73, 1.82, 1.91, 2.00, 2.10,
+              2.19, 2.28, 2.37, 2.46, 2.55, 2.65, 2.74]
+    test_y = [12850230, 5465423, 1893336, 655891, 420496,
+              342494, 198166, 96638, 59873, 81450, 48766, 35847, 27267]
+    test_high = [16325680, 6943591, 2405404, 805268, 498907,
+                 435125, 235119, 118647, 73508, 100000, 57860, 45542, 33477]
+    test_std = np.array(test_high) - np.array(test_y)
+
+    # plot
     color_index = 0
     if with_interp_line:
         color_index = 1
+
+    plt.figure(figsize=(6.8, 5.1))
 
     if log_y:
         plt.yscale("log")
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(K_tildes_N700), means_700,
                                                       yerr=std_700, fmt=f"x", color=PLOTS_COLORS[color_index], ecolor=PLOTS_COLORS[color_index], capsize=3)
-    # caplines1[0].set_marker("_")
     plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(K_tildes_N1000), means_1000,
                                                       yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3)
-    # caplines2[0].set_marker("_")
     plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(K_tildes_N2000), means_2000,
                                                       yerr=std_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3)
-    # plotline4, caplines4, barlinecols4 = plt.errorbar(np.array(K_tildes_N2000), means_2000 - std_2000,
-    #                                                   yerr=None, fmt=f"x", color="red", ecolor="red", capsize=3)
-    # caplines3[0].set_marker("_")
+    if compare:
+        plotline4, caplines4, barlinecols4 = plt.errorbar(np.array(test_x), np.array(test_y),
+                                                          yerr=test_std, fmt=f"x", color="red", ecolor="red", capsize=3)
 
     if with_interp_line:
         interp_x = np.linspace(1.76, round(K_tildes_N2000[-1] * 1.1, 2), 10000)
         interp_line = plt.plot(interp_x, power_law(
-            interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
+            interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0], linewidth=1)
 
-    label = f"K_tilde (each point is over {n_samples} samples, except for N=2000 and K_tilde={K_tildes_N2000[0]} with 1 sample)"
+    # format
+    # label = f"K_tilde (each point is over {n_samples} samples, except for N=2000 and K_tilde={K_tildes_N2000[0]} with 5 sample)"
+    label = r"$\tilde{K}$"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
     plt.ylim(top=10**12)
-    if with_interp_line:
-        plt.legend([plotline1, plotline2, plotline3, interp_line[0]], [
-            "N = 700", "N = 1000", "N = 2000", f"a * N^1.49 / (K_tilde - 1.595)^b with b={round(pars[1], 2)}"])
+    if compare:
+        if with_interp_line:
+            plt.legend([plotline1, plotline2, plotline3, plotline4, interp_line[0]], [
+                r"$N = 700$", r"$N = 1000$", r"$N = 2000$", r"$N = 2000 (Maria Chiara)$", r"$\frac{b}{(\tilde{K} - \tilde{K}_s)^a}$ " + rf"with $a={round(pars[0], 2)}$"])
+        else:
+            plt.legend([plotline1, plotline2, plotline3, plotline4], [
+                r"$N = 700$", r"$N = 1000$", r"$N = 2000$", r"$N = 2000 (Maria Chiara)$"])
     else:
-        plt.legend([plotline1, plotline2, plotline3], [
-            "N = 700", "N = 1000", "N = 2000"])
-    plt.show()
-
-
-def createPlotTimeOfConvergenceChangingK_N_700_2000_collapsed(log_y=False, with_interp_line=False):
-    n_samples = 8
-
-    N_700_K_15 = [11809, 59827, 55941, 11920, 10235, 15500, 10445, 2237]
-    N_700_K_16 = [1817, 6621, 2221, 13483, 8413, 5235, 36295, 3561]
-    N_700_K_17 = [6925, 2797, 4968, 15381, 19810, 4542, 6408, 15007]
-    N_700_K_18 = [5067, 473, 3716, 9975, 7245, 10883, 111, 289]
-    N_700_K_20 = [555, 579, 105, 67, 443, 2539, 2451, 3475]
-    N_700_K_22 = [225, 453, 553, 139, 391, 369, 181, 319]
-
-    N_1000_K_16 = [7892, 110619, 1163, 158409, 114681, 10084, 73653, 35527]
-    N_1000_K_17 = [42649, 36621, 17643, 5991, 171615, 64213, 35629, 1635]
-    N_1000_K_18 = [7397, 12455, 1333, 2801, 3749, 44313, 1805, 1793]
-    N_1000_K_19 = [2635, 13111, 7931, 7031, 13515, 26049, 7379, 33679]
-    N_1000_K_20 = [2837, 5133, 6717, 3385, 23493, 9401, 20775, 18742]
-    N_1000_K_21 = [7633, 1875, 1075, 67, 617, 2237, 4455, 445]
-    N_1000_K_23 = [3381, 318, 16043, 5878, 5059, 3154, 1659, 5193]
-    N_1000_K_25 = [5965, 4153, 1977, 2215, 957, 383, 869, 4333]
-
-    N_2000_K_20 = [392101, 392101, 392101,
-                   392101, 392101, 392101, 392101, 392101]
-    N_2000_K_22 = [211353, 233457, 413185,
-                   154133, 375989, 238615, 28637, 283873]
-    N_2000_K_25 = [135955, 22961, 9213, 121483, 151031, 10047, 3539, 23223]
-    N_2000_K_26 = [87447, 17005, 45527, 12555, 51627, 293851, 112189, 87895]
-    N_2000_K_27 = [10699, 78087, 7345, 36023, 28527, 8743, 134253, 39411]
-    N_2000_K_28 = [116675, 140219, 6543, 4199, 51285, 75360, 19313, 35025]
-
-    # N_700_K_15.remove(np.array(N_700_K_15).max())
-    # N_700_K_16.remove(np.array(N_700_K_16).max())
-    # N_700_K_17.remove(np.array(N_700_K_17).max())
-    # N_700_K_18.remove(np.array(N_700_K_18).max())
-    # N_700_K_20.remove(np.array(N_700_K_20).max())
-    # N_700_K_22.remove(np.array(N_700_K_22).max())
-
-    # N_1000_K_16.remove(np.array(N_1000_K_16).max())
-    # N_1000_K_17.remove(np.array(N_1000_K_17).max())
-    # N_1000_K_18.remove(np.array(N_1000_K_18).max())
-    # N_1000_K_19.remove(np.array(N_1000_K_19).max())
-    # N_1000_K_20.remove(np.array(N_1000_K_20).max())
-    # N_1000_K_21.remove(np.array(N_1000_K_21).max())
-    # N_1000_K_23.remove(np.array(N_1000_K_23).max())
-    # N_1000_K_25.remove(np.array(N_1000_K_25).max())
-
-    # N_2000_K_22.remove(np.array(N_2000_K_22).max())
-    # N_2000_K_25.remove(np.array(N_2000_K_25).max())
-    # N_2000_K_26.remove(np.array(N_2000_K_26).max())
-    # N_2000_K_27.remove(np.array(N_2000_K_27).max())
-    # N_2000_K_28.remove(np.array(N_2000_K_28).max())
-
-    K_tildes_N700 = [round(K / np.log2(700), 2)
-                     for K in [15, 16, 17, 18, 20, 22]]
-    K_tildes_N1000 = [round(K / np.log2(1000), 2)
-                      for K in [16, 17, 18, 19, 20, 21, 23, 25]]
-    K_tildes_N2000 = [round(K / np.log2(2000), 2)
-                      for K in [20, 22, 25, 26, 27, 28]]
-
-    N_700 = np.array([N_700_K_15, N_700_K_16, N_700_K_17,
-                     N_700_K_18, N_700_K_20, N_700_K_22])
-    N_1000 = np.array(
-        [N_1000_K_16, N_1000_K_17, N_1000_K_18, N_1000_K_19, N_1000_K_20, N_1000_K_21, N_1000_K_23, N_1000_K_25])
-    N_2000 = np.array(
-        [N_2000_K_20, N_2000_K_22, N_2000_K_25, N_2000_K_26, N_2000_K_27, N_2000_K_28])
-
-    means_700 = N_700.mean(axis=1)
-    means_1000 = N_1000.mean(axis=1)
-    means_2000 = N_2000.mean(axis=1)
-
-    if with_interp_line:
-        def power_law(x, a):
-            return a / np.power(x - np.ones(len(x)) * 1.595, 1.94)
-        pars, cov = curve_fit(f=power_law, xdata=np.array(
-            K_tildes_N2000), ydata=means_2000, p0=[0], bounds=(-np.inf, np.inf))
-        print("b=", pars[0])
-
-    def f(x, N):
-        return (1 / (pars[0] * N**5.78)) * x
-
-    std_700 = f(N_700, 700).std(axis=1)
-    std_1000 = f(N_1000, 1000).std(axis=1)
-    std_2000 = f(N_2000, 2000).std(axis=1)
-
-    color_index = 0
-    if with_interp_line:
-        color_index = 1
-
-    if log_y:
-        plt.yscale("log")
-
-    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(K_tildes_N700) - 1.55 * np.ones(len(K_tildes_N700)), f(means_700, 700),
-                                                      yerr=std_700, fmt=f"x", color=PLOTS_COLORS[color_index], ecolor=PLOTS_COLORS[color_index], capsize=3, lolims=True)
-    caplines1[0].set_marker("_")
-    plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(K_tildes_N1000) - 1.55 * np.ones(len(K_tildes_N1000)), f(means_1000, 1000),
-                                                      yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3, lolims=True)
-    caplines2[0].set_marker("_")
-    plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(K_tildes_N2000) - 1.55 * np.ones(len(K_tildes_N2000)), f(means_2000, 2000),
-                                                      yerr=std_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=True)
-    # plotline4, caplines4, barlinecols4 = plt.errorbar(np.array(K_tildes_N2000), means_2000 - std_2000,
-    #                                                   yerr=None, fmt=f"x", color="red", ecolor="red", capsize=3)
-    caplines3[0].set_marker("_")
-
-    # if with_interp_line:
-    #     interp_x = np.linspace(
-    #         1.76 - 1.55, round(K_tildes_N2000[-1] * 1.1 - 1.55, 2), 10000)
-    #     interp_line = plt.plot(interp_x, power_law(
-    #         interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
-
-    label = f"K_tilde (each point is over {n_samples} samples, except for N=2000 and K_tilde={K_tildes_N2000[0]} with 1 sample)"
-    plt.xlabel(label)
-    plt.ylabel("Number of PT steps needed")
-    plt.ylim(top=10**(-15))
-    plt.ylim(bottom=10**(-20))
-    if with_interp_line:
-        plt.legend([plotline1, plotline2, plotline3], [
-            "N = 700", "N = 1000", "N = 2000"])
-    else:
-        plt.legend([plotline1, plotline2, plotline3], [
-            "N = 700", "N = 1000", "N = 2000"])
+        if with_interp_line:
+            plt.legend([plotline1, plotline2, plotline3, interp_line[0]], [
+                r"$N = 700$", r"$N = 1000$", r"$N = 2000$", r"$\frac{b}{(\tilde{K} - \tilde{K}_s)^a}$ " + rf"with $a={round(pars[0], 2)}$"])
+        else:
+            plt.legend([plotline1, plotline2, plotline3], [
+                r"$N = 700$", r"$N = 1000$", r"$N = 2000$"])
     plt.show()
 
 
 def createPlotAcceptanceMetropolis_K_BP_N_700_5000():
+    """
+    Plot the proportion of candidate that are accepted in the Metropolis process (for K = K_BP)
+    """
+    # data
     Ns = [700, 800, 900, 1000, 2000, 3000, 4000, 5000]
     acceptance_N_700_K_16 = [[0.051, 0.272, 0.888], [0.083, 0.278, 0.887], [0.17, 0.281, 0.89], [0.077, 0.259, 0.886], [0.134, 0.281, 0.894], [
         0.07, 0.256, 0.893], [0.094, 0.261, 0.886], [0.099, 0.28, 0.896], [0.083, 0.269, 0.89], [0.103, 0.288, 0.889], [0.064, 0.257, 0.89], [0.155, 0.28, 0.889]]
@@ -1390,8 +1303,8 @@ def createPlotAcceptanceMetropolis_K_BP_N_700_5000():
         0.011, 0.42, 0.92], [0.007, 0.431, 0.923], [0.011, 0.43, 0.923], [0.022, 0.444, 0.922], [0.014, 0.432, 0.922], [0.039, 0.439, 0.917], [0.005, 0.432, 0.922]]
     acceptance_N_3000_K_33 = [[0.01, 0.372, 0.911], [0.002, 0.363, 0.911], [0.005, 0.374, 0.912], [0.14, 0.179, 0.824], [0.03, 0.174, 0.824], [
         0.075, 0.184, 0.83], [0.13, 0.187, 0.822], [0.065, 0.178, 0.825], [0.004, 0.362, 0.911], [0.006, 0.372, 0.913], [0.004, 0.376, 0.913], [0.011, 0.357, 0.907]]
-    acceptance_N_4000_K_38 = [[0.004, 0.258, 0.856], [0.001, 0.326, 0.903], [0.008, 0.273, 0.863], [
-        0.003, 0.312, 0.902], [0.079, 0.155, 0.808], [0.12, 0.174, 0.811], [0.084, 0.16, 0.81], [0.113, 0.163, 0.81]]
+    acceptance_N_4000_K_38 = [[0.004, 0.258, 0.856], [0.001, 0.326, 0.903], [0.008, 0.273, 0.863], [0.003, 0.312, 0.902], [
+        0.079, 0.155, 0.808], [0.12, 0.174, 0.811], [0.084, 0.16, 0.81], [0.113, 0.163, 0.81], [0.073, 0.144, 0.81], [0.116, 0.163, 0.809]]
     acceptance_N_5000_K_42 = [[0.003, 0.262, 0.867], [0.022, 0.15, 0.8], [
         0.092, 0.163, 0.799], [0.063, 0.138, 0.799], [0.117, 0.154, 0.8], [0.071, 0.161, 0.797]]
     beta_1 = [[] for _ in range(8)]
@@ -1444,17 +1357,16 @@ def createPlotAcceptanceMetropolis_K_BP_N_700_5000():
     for v in beta_01:
         beta_01_mean.append(np.array(v).mean())
         beta_01_std.append(np.array(v).std())
+
+    # plot
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns), np.array(beta_1_mean),
-                                                      yerr=np.array(beta_1_std), fmt=f"x", color=PLOTS_COLORS[0], ecolor=PLOTS_COLORS[0], capsize=3, lolims=False)
-    caplines1[0].set_marker("_")
+                                                      yerr=np.array(beta_1_std), fmt=f"x", color=PLOTS_COLORS[0], ecolor=PLOTS_COLORS[0], capsize=3)
     plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(Ns), np.array(beta_055_mean),
-                                                      yerr=np.array(beta_055_std), fmt=f"x", color=PLOTS_COLORS[3], ecolor=PLOTS_COLORS[3], capsize=3, lolims=False)
-    caplines2[0].set_marker("_")
+                                                      yerr=np.array(beta_055_std), fmt=f"x", color=PLOTS_COLORS[3], ecolor=PLOTS_COLORS[3], capsize=3)
     plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(Ns), np.array(beta_01_mean),
-                                                      yerr=np.array(beta_01_std), fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=False)
-    caplines3[0].set_marker("_")
-    if False:
-        plt.yscale("log")
+                                                      yerr=np.array(beta_01_std), fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3)
+
+    # format
     label = f"N (size of the graph)"
     plt.xlabel(label)
     plt.ylabel("Candidate accepted in %")
@@ -1464,6 +1376,10 @@ def createPlotAcceptanceMetropolis_K_BP_N_700_5000():
 
 
 def createPlotAcceptanceMetropolis_Ks_N_1000():
+    """
+    Plot the proportion of candidate that are accepted in the Metropolis process (for N = 1000 and multiple K's)
+    """
+    # data
     Ks = [16, 17, 18, 19, 20, 21, 23, 25]
     acceptance_N_1000_K_16 = [[0.101, 0.272, 0.885], [0.046, 0.253, 0.888], [0.062, 0.421, 0.931], [
         0.048, 0.255, 0.891], [0.043, 0.258, 0.891], [0.102, 0.277, 0.895], [0.066, 0.253, 0.888], [0.109, 0.265, 0.892]]
@@ -1531,17 +1447,16 @@ def createPlotAcceptanceMetropolis_Ks_N_1000():
     for v in beta_01:
         beta_01_mean.append(np.array(v).mean())
         beta_01_std.append(np.array(v).std())
+
+    # plot
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ks), np.array(beta_1_mean),
-                                                      yerr=np.array(beta_1_std), fmt=f"x", color=PLOTS_COLORS[0], ecolor=PLOTS_COLORS[0], capsize=3, lolims=False)
-    caplines1[0].set_marker("_")
+                                                      yerr=np.array(beta_1_std), fmt=f"x", color=PLOTS_COLORS[0], ecolor=PLOTS_COLORS[0], capsize=3)
     plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(Ks), np.array(beta_055_mean),
-                                                      yerr=np.array(beta_055_std), fmt=f"x", color=PLOTS_COLORS[3], ecolor=PLOTS_COLORS[3], capsize=3, lolims=False)
-    caplines2[0].set_marker("_")
+                                                      yerr=np.array(beta_055_std), fmt=f"x", color=PLOTS_COLORS[3], ecolor=PLOTS_COLORS[3], capsize=3)
     plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(Ks), np.array(beta_01_mean),
-                                                      yerr=np.array(beta_01_std), fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, lolims=False)
-    caplines3[0].set_marker("_")
-    if False:
-        plt.yscale("log")
+                                                      yerr=np.array(beta_01_std), fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3)
+
+    # format
     label = f"K (size of the planted clique) (N = 1000)"
     plt.xlabel(label)
     plt.ylabel("Candidate accepted in %")
@@ -1553,14 +1468,16 @@ def createPlotAcceptanceMetropolis_Ks_N_1000():
 if __name__ == '__main__':
     # ===============================
     # To test the clique recovery with PT uncomment this section and change the values of K_tilde_test (or K_test), N_test according to your needs
+
     # K_tilde_test = 1.92
     # N_test = 1000
     # K_test = getKFromKTilde(N_test, K_tilde_test)
-    # testParallelTempering(N_test, K_test, show_graph=False)
+    # testParallelTempering(N_test, K_test, create_plots=False)
     # ===============================
 
     # ===============================
     # To sample the convergence of PT by changing N uncomment this section
+
     # Ns = [200, 500, 1000, 2000, 3000, 4000, 5000]  # the N's to be sampled
     # # size of the planted clique K with one of the following options
     # K_as_list = [8, 13, 19, 27, 33, 38, 42] # each N has its own K ([] if not this option)
@@ -1572,6 +1489,7 @@ if __name__ == '__main__':
 
     # ===============================
     # To sample the convergence of PT by changing N and multiple K's by N uncomment this section
+
     # Ns = [200, 500, 1000, 2000, 3000, 4000, 5000]  # the N's to be sampled
     # # sizes of the planted clique K to be samples by N
     # K_tildes = [[floor(np.sqrt(N/np.e)) - i for i in range(2)] for N in Ns]
@@ -1581,20 +1499,21 @@ if __name__ == '__main__':
 
     # ===============================
     # Create plots from data
-    # createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False)
+
+    # # Plot the evolution of the time of convergence changing N (for K = K_BP)
+    # createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False)
+
+    # # Plot the evolution of the time of convergence changing N (for K = K_BP - 2)
     # createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False)
-    # createPlotTimeOfConvergence_N700_to_N5000_sqrt(log_y=False)
+
+    # # Plot the evolution of the time of convergence changing K (for N = 700, 1000, 2000)
     # createPlotTimeOfConvergenceChangingK_N_700_2000(
-    #     log_y=True, with_interp_line=True)
-    # createPlotTimeOfConvergenceChangingK_N_700_2000_collapsed(
-    #     log_y=True, with_interp_line=True)
+    #     log_y=True, with_interp_line=True, compare=False)
+
+    # # Plot the proportion of candidate that are accepted in the Metropolis process (for K = K_BP)
     # createPlotAcceptanceMetropolis_K_BP_N_700_5000()
+
+    # # Plot the proportion of candidate that are accepted in the Metropolis process (for N = 1000 and multiple K's)
     # createPlotAcceptanceMetropolis_Ks_N_1000()
     # ===============================
-
-    Ns = [4000, 5000, 3000]
-    K_tildes = [[38.0 / np.log2(4000)],
-                [42.0 / np.log2(5000)], [31.0 / np.log2(3000)]]
-    timeOfConvergenceChangingK(
-        Ns, K_tildes, n_samples=4, send_result_email=True)
     pass
