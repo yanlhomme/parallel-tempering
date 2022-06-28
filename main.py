@@ -1053,7 +1053,7 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False):
     plt.figure(figsize=(8.3, 5.1))
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
-                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3)
+                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, linewidth=1)
 
     interp_x = np.linspace(Ns_K_BPs[0] - 100, Ns_K_BPs[-1] + 100, 10000)
     interp_line_exp = plt.plot(interp_x, exp_law(
@@ -1067,7 +1067,7 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False):
     chiara_std = np.array(chiara_high) - np.array(chiara_mean)
     if compare:
         plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(chiara_x), np.array(chiara_mean),
-                                                          yerr=chiara_std, fmt=f"x", color="red", ecolor="red", capsize=3)
+                                                          yerr=chiara_std, fmt=f"x", color="red", ecolor="red", capsize=3, linewidth=1)
 
     # format
     if log_y:
@@ -1138,14 +1138,14 @@ def createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False):
     plt.figure(figsize=(8.3, 5.1))
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
-                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3)
+                                                      yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, linewidth=1)
 
     interp_x = np.linspace(Ns_K_BPs[0] - 100, Ns_K_BPs[-1] + 100, 10000)
     interp_line = plt.plot(interp_x, power_law(
-        interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0])
+        interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0], linewidth=1)
 
     interp_line_exp = plt.plot(interp_x, exp_law(
-        interp_x, pars_exp[0], pars_exp[1]), color=PLOTS_COLORS[-1])
+        interp_x, pars_exp[0], pars_exp[1]), color=PLOTS_COLORS[-1], linewidth=1)
 
     # format
     if log_y:
@@ -1221,7 +1221,7 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
     # fit
     if with_interp_line:
         def power_law(x, a, b):
-            return b / np.power(x - np.ones(len(x)) * 1.595, a)
+            return b / np.power(x - np.ones(len(x)) * 1.594, a)
         pars, cov = curve_fit(f=power_law, xdata=np.array(
             K_tildes_N2000), ydata=means_2000, sigma=std_2000, absolute_sigma=True, p0=[0, 0], bounds=(-np.inf, np.inf))
         chisq_power = np.power(np.multiply((means_2000 - power_law(np.array(K_tildes_N2000),
@@ -1248,17 +1248,18 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
         plt.yscale("log")
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(K_tildes_N700), means_700,
-                                                      yerr=std_700, fmt=f"x", color=PLOTS_COLORS[color_index], ecolor=PLOTS_COLORS[color_index], capsize=3)
+                                                      yerr=std_700, fmt=f"x", color=PLOTS_COLORS[color_index], ecolor=PLOTS_COLORS[color_index], capsize=3, linewidth=1)
     plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(K_tildes_N1000), means_1000,
-                                                      yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3)
+                                                      yerr=std_1000, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3, linewidth=1)
     plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(K_tildes_N2000), means_2000,
-                                                      yerr=std_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3)
+                                                      yerr=std_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3, linewidth=1)
     if compare:
         plotline4, caplines4, barlinecols4 = plt.errorbar(np.array(test_x), np.array(test_y),
                                                           yerr=test_std, fmt=f"x", color="red", ecolor="red", capsize=3)
 
     if with_interp_line:
-        interp_x = np.linspace(1.76, round(K_tildes_N2000[-1] * 1.1, 2), 10000)
+        interp_x = np.linspace(1.615, round(
+            K_tildes_N2000[-1] * 1.08, 2), 10000)
         interp_line = plt.plot(interp_x, power_law(
             interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0], linewidth=1)
 
@@ -1268,6 +1269,7 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
     plt.ylim(top=10**12)
+    plt.xlim(left=1.58)
     if compare:
         if with_interp_line:
             plt.legend([plotline1, plotline2, plotline3, plotline4, interp_line[0]], [
@@ -1282,6 +1284,120 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
         else:
             plt.legend([plotline1, plotline2, plotline3], [
                 r"$N = 700$", r"$N = 1000$", r"$N = 2000$"])
+    plt.show()
+
+
+def createPlotTimeOfConvergenceChangingK_N_700_2000_collapsed(log_y=False, with_std_dev=False):
+    """
+    Plot the evolution of the time of convergence changing K (for N = 700, 1000, 2000) collapsed
+    Parameters:
+        compare: whether to display the data of the paper of Maria Chiara Angelini or not
+    """
+    n_samples = 8
+
+    # data
+    N_700_K_15 = [11809, 59827, 55941, 11920, 10235, 15500, 10445, 2237]
+    N_700_K_16 = [1817, 6621, 2221, 13483, 8413, 5235, 36295, 3561]
+    N_700_K_17 = [6925, 2797, 4968, 15381, 19810, 4542, 6408, 15007]
+    N_700_K_18 = [5067, 473, 3716, 9975, 7245, 10883, 111, 289]
+    N_700_K_20 = [555, 579, 105, 67, 443, 2539, 2451, 3475]
+    N_700_K_22 = [225, 453, 553, 139, 391, 369, 181, 319]
+
+    N_1000_K_16 = [7892, 110619, 1163, 158409, 114681, 10084, 73653, 35527]
+    N_1000_K_17 = [42649, 36621, 17643, 5991, 171615, 64213, 35629, 1635]
+    N_1000_K_18 = [7397, 12455, 1333, 2801, 3749, 44313, 1805, 1793]
+    N_1000_K_19 = [2635, 13111, 7931, 7031, 13515, 26049, 7379, 33679]
+    N_1000_K_20 = [2837, 5133, 6717, 3385, 23493, 9401, 20775, 18742]
+    N_1000_K_21 = [7633, 1875, 1075, 67, 617, 2237, 4455, 445]
+    N_1000_K_23 = [3381, 318, 16043, 5878, 5059, 3154, 1659, 5193]
+    N_1000_K_25 = [5965, 4153, 1977, 2215, 957, 383, 869, 4333]
+
+    N_2000_K_20 = [392101, 1483411, 815731, 922577, 60859]
+    N_2000_K_22 = [211353, 233457, 413185,
+                   154133, 375989, 238615, 28637, 283873]
+    N_2000_K_25 = [135955, 22961, 9213, 121483, 151031, 10047, 3539, 23223]
+    N_2000_K_26 = [87447, 17005, 45527, 12555, 51627, 293851, 112189, 87895]
+    N_2000_K_27 = [10699, 78087, 7345, 36023, 28527, 8743, 134253, 39411]
+    N_2000_K_28 = [116675, 140219, 6543, 4199, 51285, 75360, 19313, 35025]
+
+    K_tildes_N700 = [round(K / np.log2(700), 2)
+                     for K in [15, 16, 17, 18, 20, 22]]
+    K_tildes_N1000 = [round(K / np.log2(1000), 2)
+                      for K in [16, 17, 18, 19, 20, 21, 23, 25]]
+    K_tildes_N2000 = [round(K / np.log2(2000), 2)
+                      for K in [20, 22, 25, 26, 27, 28]]
+
+    N_700 = np.array([N_700_K_15, N_700_K_16, N_700_K_17,
+                     N_700_K_18, N_700_K_20, N_700_K_22])
+    N_1000 = np.array(
+        [N_1000_K_16, N_1000_K_17, N_1000_K_18, N_1000_K_19, N_1000_K_20, N_1000_K_21, N_1000_K_23, N_1000_K_25])
+    N_2000 = np.array(
+        [N_2000_K_22, N_2000_K_25, N_2000_K_26, N_2000_K_27, N_2000_K_28])
+
+    # collapse
+    param_a = 2.91  # from the fit on K = K_BP - 2
+
+    def collapse_y(y, N):
+        return y / (N**param_a)
+
+    means_700_collapsed = collapse_y(N_700, 700).mean(axis=1)
+    means_1000_collapsed = collapse_y(N_1000, 1000).mean(axis=1)
+    means_2000_collapsed = np.array([collapse_y(
+        np.array(N_2000_K_20), 2000).mean(), *list(collapse_y(N_2000, 2000).mean(axis=1))])
+
+    std_700_collapsed = collapse_y(N_700, 700).std(axis=1)
+    std_1000_collapsed = collapse_y(N_1000, 1000).std(axis=1)
+    std_2000_collapsed = np.array([collapse_y(
+        np.array(N_2000_K_20), 2000).std(), *list(collapse_y(N_2000, 2000).std(axis=1))])
+
+    min_K_700 = 1.5964
+    min_K_1000 = 1.5978
+    min_K_2000 = 1.6027
+
+    K_tildes_all = np.array(
+        [*K_tildes_N700, *K_tildes_N1000, *K_tildes_N2000]) - np.concatenate((np.ones(len(K_tildes_N700)) * min_K_700, np.ones(len(K_tildes_N1000)) * min_K_1000, np.ones(len(K_tildes_N2000)) * min_K_2000), axis=0)
+
+    # fit
+    def fit_collapse(x, b):
+        return b * x
+    pars, cov = curve_fit(f=fit_collapse, xdata=K_tildes_all, ydata=np.concatenate((means_700_collapsed, means_1000_collapsed, means_2000_collapsed), axis=0),
+                          sigma=np.concatenate((std_700_collapsed, std_1000_collapsed, std_2000_collapsed), axis=0), absolute_sigma=True, p0=[0], bounds=(-np.inf, np.inf))
+
+    print(pars[0])
+    print(1 / pars[0])
+
+    # plot
+    color_index = 0
+
+    plt.figure(figsize=(6.8, 5.1))
+
+    if log_y:
+        plt.yscale("log")
+
+    yerr_700 = fit_collapse(std_700_collapsed, pars[0])
+    yerr_1000 = fit_collapse(std_1000_collapsed, pars[0])
+    yerr_2000 = fit_collapse(std_2000_collapsed, pars[0])
+    if not with_std_dev:
+        yerr_700 = None
+        yerr_1000 = None
+        yerr_2000 = None
+
+    plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(K_tildes_N700) - np.ones(len(K_tildes_N700)) * min_K_700, fit_collapse(means_700_collapsed, pars[0]),
+                                                      yerr=yerr_700, fmt=f"x", color=PLOTS_COLORS[color_index], ecolor=PLOTS_COLORS[color_index], capsize=3)
+    plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(K_tildes_N1000) - np.ones(len(K_tildes_N1000)) * min_K_1000, fit_collapse(means_1000_collapsed, pars[0]),
+                                                      yerr=yerr_1000, fmt=f"x", color=PLOTS_COLORS[4], ecolor=PLOTS_COLORS[4], capsize=3)
+    plotline3, caplines3, barlinecols3 = plt.errorbar(np.array(K_tildes_N2000) - np.ones(len(K_tildes_N2000)) * min_K_2000, fit_collapse(means_2000_collapsed, pars[0]),
+                                                      yerr=yerr_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3)
+
+    # format
+    # label = f"K_tilde - K_s (each point is over {n_samples} samples, except for N=2000 and K_tilde={K_tildes_N2000[0]} with 5 sample)"
+    label = r"$\tilde{K} - \tilde{K}_s(N)$"
+    plt.xlabel(label)
+    plt.ylabel(r"(Number of PT steps needed)/$(bN^{\nu})$")
+    plt.ylim(top=10**(-8), bottom=10**(-13))
+
+    plt.legend([plotline1, plotline2, plotline3], [
+               r"$N = 700$", r"$N = 1000$", r"$N = 2000$"])
     plt.show()
 
 
@@ -1501,14 +1617,18 @@ if __name__ == '__main__':
     # Create plots from data
 
     # Plot the evolution of the time of convergence changing N (for K = K_BP)
-    createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False)
+    # createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False)
 
     # Plot the evolution of the time of convergence changing N (for K = K_BP - 2)
-    createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False)
+    # createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False)
 
     # # Plot the evolution of the time of convergence changing K (for N = 700, 1000, 2000)
     # createPlotTimeOfConvergenceChangingK_N_700_2000(
     #     log_y=True, with_interp_line=True, compare=False)
+
+    # # Plot the evolution of the time of convergence changing K (collapsed) (for N = 700, 1000, 2000)
+    # createPlotTimeOfConvergenceChangingK_N_700_2000_collapsed(
+    #     log_y=True, with_std_dev=True)
 
     # # Plot the proportion of candidate that are accepted in the Metropolis process (for K = K_BP)
     # createPlotAcceptanceMetropolis_K_BP_N_700_5000()
@@ -1516,4 +1636,8 @@ if __name__ == '__main__':
     # # Plot the proportion of candidate that are accepted in the Metropolis process (for N = 1000 and multiple K's)
     # createPlotAcceptanceMetropolis_Ks_N_1000()
     # ===============================
+
+    Ns = [5000]
+    K_tildes = [[42.0 / np.log2(5000)]]
+    timeOfConvergenceChangingK(Ns, K_tildes, 2)
     pass
