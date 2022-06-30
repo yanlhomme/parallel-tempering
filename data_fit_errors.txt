@@ -1,6 +1,6 @@
 Changing N, K = K_BP
-CHISQ power: 0.297
-CHISQ exp: 0.336
+CHISQ power: 0.291
+CHISQ exp: 0.329
 
 Changing N, K = K_BP - 2
 CHISQ power: 3.063

@@ -2,7 +2,7 @@ from mails import send_email
 from progressbar import printProgressBar
 import concurrent.futures
 from datetime import datetime
-from math import ceil, floor
+from math import ceil, factorial, floor
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -596,7 +596,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
 
     if create_plots:
         # create a plot with visual representations of the search in the graph for each replica
-        # the plots will be saved in the folder "plots/"
+        # the plots will be saved in the folder "visualization/"
         figure, axis = plt.subplots(2, ceil(len(betas) * 0.5))
         figure.set_size_inches(
             (6.4 + 0.8) * ceil(len(betas) * 0.5), (4.8 + 0.8) * 2)
@@ -620,7 +620,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
             nx.draw(G, pos=pos, node_color=[
                 "tab:blue" if i in v_indices else "tab:gray" for i in range(N)], node_size=d, ax=axis[row, col])
             axis[row, col].set_title(f"beta={round(b, 2)}")
-        plt.savefig(f"plots/subplot_N{N}_K{K}_0.png", dpi=300)
+        plt.savefig(f"visualization/subplot_N{N}_K{K}_0.png", dpi=300)
 
     # initialize the progress bar indicating the percentage of the current estimated clique size against K
     printProgressBar(0, K, prefix=f"Progress:",
@@ -651,7 +651,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
                 nx.draw(G, pos=pos, node_color=[
                     "tab:green" if i in v_indices and estimates[j][i] == 1 else "tab:blue" if i in v_indices else "tab:red" if estimates[j][i] == 1 else "tab:gray" for i in range(N)], node_size=d, ax=axis[row, col])
             plt.savefig(
-                f"plots/subplot_N{N}_K{K}_{control + 1}.png", dpi=300)
+                f"visualization/subplot_N{N}_K{K}_{control + 1}.png", dpi=300)
 
         # perform configurations
         estimates, energies, monitoring_tempering_step = performSwitchConfiguration(
@@ -674,7 +674,7 @@ def parallelTempering(A, N, K, betas, n_steps=5, switchConfig={"how": "consecuti
                 nx.draw(G, pos=pos, node_color=[
                     "tab:green" if i in v_indices and estimates[j][i] == 1 else "tab:blue" if i in v_indices else "tab:red" if estimates[j][i] == 1 else "tab:gray" for i in range(N)], node_size=d, ax=axis[row, col])
             plt.savefig(
-                f"plots/subplot_N{N}_K{K}_{control + 1}_afterswitch.png", dpi=300)
+                f"visualization/subplot_N{N}_K{K}_{control + 1}_afterswitch.png", dpi=300)
 
         # update progress bar
         change_accept_beta_1 = round(
@@ -1003,6 +1003,7 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False):
     """
     index_color = 2
     n_samples = 12
+    scale = 1
 
     # data
     Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000, 4000, 5000]
@@ -1023,16 +1024,16 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False):
     N_3000_K_33_2 = [55451, 329497, 217849, 100373]
     N_3000_K_33 = [79673, 75225, 63127, 37781,
                    93621, 6501, 56727, 55451, *N_3000_K_33_2]
-    N_4000_K_38_2 = [278681, 347765]
+    N_4000_K_38_2 = [278681, 347765, 290671, 3771]
     N_4000_K_38 = [16929, 237699, 44755, 41333,
                    83531, 82023, 304713, 96773, *N_4000_K_38_2]
     N_5000_K_42 = [41273, 371025, 162027, 94849, 298315, 39507]
     results = np.array(
-        [N_700_K_16, N_800_K_17, N_900_K_18, N_1000_K_19, N_2000_K_27, N_3000_K_33])
+        [N_700_K_16, N_800_K_17, N_900_K_18, N_1000_K_19, N_2000_K_27, N_3000_K_33, N_4000_K_38])
     results_mean = np.array(
-        [*list(results.mean(axis=1)), np.array(N_4000_K_38).mean(), np.array(N_5000_K_42).mean()])
+        [*list(results.mean(axis=1)), np.array(N_5000_K_42).mean()])
     results_std_dev = np.array(
-        [*list(results.std(axis=1)), np.array(N_4000_K_38).std(), np.array(N_5000_K_42).std()])
+        [*list(results.std(axis=1)), np.array(N_5000_K_42).std()])
 
     # fits
     def power_law(x, a, b):
@@ -1050,7 +1051,7 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False):
                                                              pars_exp[0], pars_exp[1])), np.reciprocal(results_std_dev)), 2).sum()
 
     # plot
-    plt.figure(figsize=(8.3, 5.1))
+    plt.figure(figsize=(scale*8.3, scale*5.1))
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
                                                       yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, linewidth=1)
@@ -1061,18 +1062,17 @@ def createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False):
     interp_line = plt.plot(interp_x, power_law(
         interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0], linewidth=1)
 
-    chiara_x = [2000, 3000, 4000, 5000]
-    chiara_mean = [81450, 136039, 278962, 678708]
-    chiara_high = [100000, 161406, 330980, 833282]
-    chiara_std = np.array(chiara_high) - np.array(chiara_mean)
+    angelini_x = [2000, 3000, 4000, 5000]
+    angelini_mean = [81450, 136039, 278962, 678708]
+    angelini_high = [100000, 161406, 330980, 833282]
+    angelini_std = np.array(angelini_high) - np.array(angelini_mean)
     if compare:
-        plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(chiara_x), np.array(chiara_mean),
-                                                          yerr=chiara_std, fmt=f"x", color="red", ecolor="red", capsize=3, linewidth=1)
+        plotline2, caplines2, barlinecols2 = plt.errorbar(np.array(angelini_x), np.array(angelini_mean),
+                                                          yerr=angelini_std, fmt=f"x", color="red", ecolor="red", capsize=3, linewidth=1)
 
     # format
     if log_y:
         plt.yscale("log")
-    # label = f"N (each point is over {n_samples} samples for N <= 3000, 10 samples for N=4000, 6 samples for N=5000)"
     label = "N (size of the graph)"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
@@ -1093,6 +1093,7 @@ def createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False):
     """
     index_color = 2
     n_samples = 12
+    scale = 1
 
     # data
     Ns_K_BPs = [700, 800, 900, 1000, 2000, 3000]
@@ -1135,7 +1136,7 @@ def createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False):
                                                              pars_exp[0], pars_exp[1])), np.reciprocal(results_std_dev)), 2).sum()
 
     # plot
-    plt.figure(figsize=(8.3, 5.1))
+    plt.figure(figsize=(scale*8.3, scale*5.1))
 
     plotline1, caplines1, barlinecols1 = plt.errorbar(np.array(Ns_K_BPs), np.array(results_mean),
                                                       yerr=np.array(results_std_dev), fmt=f"x", color=PLOTS_COLORS[index_color], ecolor=PLOTS_COLORS[index_color], capsize=3, linewidth=1)
@@ -1150,7 +1151,6 @@ def createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False):
     # format
     if log_y:
         plt.yscale("log")
-    # label = f"N (each point is over {n_samples} samples, 8 samples for N=3000)"
     label = "N (size of the graph)"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
@@ -1168,6 +1168,7 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
         compare: whether to display the data of the paper of Maria Chiara Angelini or not
     """
     n_samples = 8
+    scale = 1
 
     # data
     N_700_K_15 = [11809, 59827, 55941, 11920, 10235, 15500, 10445, 2237]
@@ -1242,7 +1243,7 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
     if with_interp_line:
         color_index = 1
 
-    plt.figure(figsize=(6.8, 5.1))
+    plt.figure(figsize=(scale*6.8, scale*5.1))
 
     if log_y:
         plt.yscale("log")
@@ -1264,7 +1265,6 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000(log_y=False, with_interp_lin
             interp_x, pars[0], pars[1]), color=PLOTS_COLORS[0], linewidth=1)
 
     # format
-    # label = f"K_tilde (each point is over {n_samples} samples, except for N=2000 and K_tilde={K_tildes_N2000[0]} with 5 sample)"
     label = r"$\tilde{K}$"
     plt.xlabel(label)
     plt.ylabel("Number of PT steps needed")
@@ -1390,7 +1390,6 @@ def createPlotTimeOfConvergenceChangingK_N_700_2000_collapsed(log_y=False, with_
                                                       yerr=yerr_2000, fmt=f"x", color=PLOTS_COLORS[6], ecolor=PLOTS_COLORS[6], capsize=3)
 
     # format
-    # label = f"K_tilde - K_s (each point is over {n_samples} samples, except for N=2000 and K_tilde={K_tildes_N2000[0]} with 5 sample)"
     label = r"$\tilde{K} - \tilde{K}_s(N)$"
     plt.xlabel(label)
     plt.ylabel(r"(Number of PT steps needed)/$(bN^{\nu})$")
@@ -1616,10 +1615,10 @@ if __name__ == '__main__':
     # ===============================
     # Create plots from data
 
-    # Plot the evolution of the time of convergence changing N (for K = K_BP)
+    # # Plot the evolution of the time of convergence changing N (for K = K_BP)
     # createPlotTimeOfConvergence_N700_to_N5000_K_BP(log_y=False, compare=False)
 
-    # Plot the evolution of the time of convergence changing N (for K = K_BP - 2)
+    # # Plot the evolution of the time of convergence changing N (for K = K_BP - 2)
     # createPlotTimeOfConvergence_N700_to_N3000_K_BPminus2(log_y=False)
 
     # # Plot the evolution of the time of convergence changing K (for N = 700, 1000, 2000)
@@ -1636,8 +1635,4 @@ if __name__ == '__main__':
     # # Plot the proportion of candidate that are accepted in the Metropolis process (for N = 1000 and multiple K's)
     # createPlotAcceptanceMetropolis_Ks_N_1000()
     # ===============================
-
-    Ns = [5000]
-    K_tildes = [[42.0 / np.log2(5000)]]
-    timeOfConvergenceChangingK(Ns, K_tildes, 2)
     pass
